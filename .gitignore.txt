@@ -1,0 +1,11 @@
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Configuración de editores
+.vscode/
+.idea/
+
+# Pluto notebooks
+.ipynb_checkpoints/
+.julia_pluto_notebooks/
