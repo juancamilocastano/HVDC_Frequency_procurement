@@ -41,8 +41,10 @@ include(joinpath(path,"printparameters.jl")) # print resutls
 
 build_ac_opf_acdc_modify!(m) # Pass the model to the build_ac_opf_acdc! function
 #build_ac_opf_acdc_frequency!(m) # Pass the model to the build_ac_opf_acdc! function
+#build_ac_opf_acdc_frequency_silent!(m) # Pass the model to the build_ac_opf_acdc! function
 
-##### Step 4: Solve the model
+
+##### Step 4: Solve the modely
 
 
 # set_optimizer_attribute(m, "DualReductions", 0)
@@ -55,7 +57,7 @@ optimize!(m)
 plotfunction_modify!(m) # Plot the results
 #plotfunction_frequency!(m) # Plot the results
 
-printparameters!(m) # Print the results
+#printparameters!(m) # Print the results
 
 
 
