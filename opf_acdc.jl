@@ -39,9 +39,9 @@ include(joinpath(path,"plotfunction_modify.jl")) # plot resutls
 include(joinpath(path,"plotfunction_frequency.jl"))
 include(joinpath(path,"printparameters.jl")) # print resutls
 
-build_ac_opf_acdc_modify!(m) # Pass the model to the build_ac_opf_acdc! function
+#build_ac_opf_acdc_modify!(m) # Pass the model to the build_ac_opf_acdc! function
 #build_ac_opf_acdc_frequency!(m) # Pass the model to the build_ac_opf_acdc! function
-#build_ac_opf_acdc_frequency_silent!(m) # Pass the model to the build_ac_opf_acdc! function
+build_ac_opf_acdc_frequency_silent!(m) # Pass the model to the build_ac_opf_acdc! function
 
 
 ##### Step 4: Solve the modely
@@ -49,17 +49,26 @@ build_ac_opf_acdc_modify!(m) # Pass the model to the build_ac_opf_acdc! function
 
 # set_optimizer_attribute(m, "DualReductions", 0)
 # set_optimizer_attribute(m, "InfUnbdInfo", 1)
+#set_optimizer_attribute(m, "MIPGap", 0.1) 
 optimize!(m)
 # @show termination_status(m)
 
 # compute_conflict!(m)
 
-plotfunction_modify!(m) # Plot the results
-#plotfunction_frequency!(m) # Plot the results
+#plotfunction_modify!(m) # Plot the results
+
+plotfunction_frequency!(m) # Plot the results
 
 #printparameters!(m) # Print the results
 
 
+
+filename = "objective.txt"
+
+open(filename, "w") do file
+    
+    println(file, "Objective: ", objective_value(m))
+end
 
 
 
