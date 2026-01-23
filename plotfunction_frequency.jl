@@ -75,7 +75,7 @@ conv_p_dc=JuMP.value.(m.ext[:variables][:conv_p_dc])*baseMVA
 
 fig1 = Figure()
 ax = fig1[1, 1] = Axis(fig1,
-    title = "Storage and Hydrogen flows",
+    title = "Storage and Hydrogen flows Area 1",
     xlabel = "Time (hours)",
     ylabel = "Hydrogen Flow (Kg/h) and Storage (Kg)"
 )
@@ -94,7 +94,7 @@ fig1
 
 fig2 = Figure()
 ax2 = fig2[1, 1] = Axis(fig2,
-    title = "Storage and Hydrogen flows",
+    title = "Storage and Hydrogen flows Area 2",
     xlabel = "Time (hours)",
     ylabel = "Hydrogen Flow (Kg/h) and Storage (Kg)"
 )
@@ -109,7 +109,7 @@ fig2
 
 fig3 = Figure()
 ax3 = fig3[1, 1] = Axis(fig3,
-    title = "Energy and power flows of the storage",
+    title = "Energy and power flows of the storage Area 1",
     xlabel = "Time (hours)",
     ylabel = "Power (MW) and Storage (Mwh)"
 )
@@ -121,7 +121,7 @@ fig3
 
 fig4 = Figure()
 ax4 = fig4[1, 1] = Axis(fig4,
-    title = "Energy and power flows of the storage",
+    title = "Energy and power flows of the storage Area 2",
     xlabel = "Time (hours)",
     ylabel = "Power (MW) and Storage (Mwh)"
 )

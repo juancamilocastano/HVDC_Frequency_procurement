@@ -39,9 +39,9 @@ include(joinpath(path,"plotfunction_modify.jl")) # plot resutls
 include(joinpath(path,"plotfunction_frequency.jl"))
 include(joinpath(path,"printparameters.jl")) # print resutls
 
-#build_ac_opf_acdc_modify!(m) # Pass the model to the build_ac_opf_acdc! function
+build_ac_opf_acdc_modify!(m) # Pass the model to the build_ac_opf_acdc! function
 #build_ac_opf_acdc_frequency!(m) # Pass the model to the build_ac_opf_acdc! function
-build_ac_opf_acdc_frequency_silent!(m) # Pass the model to the build_ac_opf_acdc! function
+#build_ac_opf_acdc_frequency_silent!(m) # Pass the model to the build_ac_opf_acdc! function
 
 
 ##### Step 4: Solve the modely
@@ -55,9 +55,9 @@ optimize!(m)
 
 # compute_conflict!(m)
 
-#plotfunction_modify!(m) # Plot the results
+plotfunction_modify!(m) # Plot the results
 
-plotfunction_frequency!(m) # Plot the results
+#plotfunction_frequency!(m) # Plot the results
 
 #printparameters!(m) # Print the results
 

@@ -13,7 +13,11 @@ CV=m.ext[:sets][:CV]
 CV1=m.ext[:sets][:CV1]
 CV2=m.ext[:sets][:CV2]
 T=m.ext[:sets][:t]
+N = m.ext[:sets][:N]
+N1=m.ext[:sets][:N1]
+N2=m.ext[:sets][:N2]
 
+demand = m.ext[:parameters][:demand]
 baseKG=m.ext[:parameters][:baseKG]
 baseMVA=m.ext[:parameters][:baseMVA]
 pg=JuMP.value.(m.ext[:variables][:pg])*baseMVA
@@ -44,7 +48,8 @@ flows_hvdc24= Array(flows_hvdc[("1", "2", "4"),:])
 flows_hvdc31= Array(flows_hvdc[("2", "3", "1"),:])
 conv_p_ac=JuMP.value.(m.ext[:variables][:conv_p_ac])*baseMVA
 conv_p_dc=JuMP.value.(m.ext[:variables][:conv_p_dc])*baseMVA
-
+demandmatrix= [demand[n][t] for n in N, t in T]
+demandwithoutEB=vec(sum(demandmatrix, dims=1))*baseMVA
 
 
 
@@ -55,7 +60,7 @@ conv_p_dc=JuMP.value.(m.ext[:variables][:conv_p_dc])*baseMVA
 
 fig1 = Figure()
 ax = fig1[1, 1] = Axis(fig1,
-    title = "Storage and Hydrogen flows",
+    title = "Storage and Hydrogen flows Area 1",
     xlabel = "Time (hours)",
     ylabel = "Hydrogen Flow (Kg/h) and Storage (Kg)"
 )
@@ -74,7 +79,7 @@ fig1
 
 fig2 = Figure()
 ax2 = fig2[1, 1] = Axis(fig2,
-    title = "Storage and Hydrogen flows",
+    title = "Storage and Hydrogen flows Area 2",
     xlabel = "Time (hours)",
     ylabel = "Hydrogen Flow (Kg/h) and Storage (Kg)"
 )
@@ -89,7 +94,7 @@ fig2
 
 fig3 = Figure()
 ax3 = fig3[1, 1] = Axis(fig3,
-    title = "Energy and power flows of the storage",
+    title = "Energy and power flows of the storage Area 1",
     xlabel = "Time (hours)",
     ylabel = "Power (MW) and Storage (Mwh)"
 )
@@ -101,7 +106,7 @@ fig3
 
 fig4 = Figure()
 ax4 = fig4[1, 1] = Axis(fig4,
-    title = "Energy and power flows of the storage",
+    title = "Energy and power flows of the storage Area 2",
     xlabel = "Time (hours)",
     ylabel = "Power (MW) and Storage (Mwh)"
 )
@@ -231,6 +236,25 @@ lines!(ax11, flows_hvdc31, label = "Flow HVDC 3-1")
 fig11[1, 2] = Legend(fig11, ax11, "HVDC flows", framevisible = false)
 fig11
 
+fig12=Figure()
+ax12=fig12[1, 1] = Axis(fig12,
+    title = "Sum Of Power Flows HVDC Links",
+    xlabel = "Time (hours)",
+    ylabel = "Power (MW)"
+)
+lines!(ax12,flows_hvdc24+flows_hvdc31, label = "Sum Of Flows 24 + 31")
+fig12[1, 2] = Legend(fig12, ax12, "Sum Of HVDC flows", framevisible = false)
+fig12
+
+fig13=Figure()
+ax13=fig13[1, 1] = Axis(fig13,
+    title = "Demand without Electrolyzers and BESS",
+    xlabel = "Time (hours)",
+    ylabel = "Power (MW)"
+)
+lines!(ax13, demandwithoutEB, label = "Total Demand")
+fig13[1, 2] = Legend(fig13, ax13, "Demand", framevisible = false)
+fig13
 
 save("hydrogen_storage1.png", fig1)
 save("hydrogen_storage_2.png", fig2)
@@ -239,6 +263,8 @@ save("storage_power_energy_2.png", fig4)
 save("generation_area1.png", fig5)
 save("generation_area2.png", fig6)
 save("hvdc_flows.png", fig11)
+save("sum_hvdc_flows.png", fig12)
+save("demand_without_EB.png", fig13)
 end
 
 

@@ -8,6 +8,8 @@ function define_sets!(m::Model, data::Dict, ts::DataFrame, tsw::DataFrame)
     # Sets of elements
     # Set of AC nodes
     N = m.ext[:sets][:N] = [bus_id for (bus_id,bus) in data["bus"]]
+    N1=m.ext[:sets][:N1]= [N_id for (N_id,gen) in data["bus"] if data["bus"][N_id]["area"]==1]
+    N2=m.ext[:sets][:N2]= [N_id for (N_id,gen) in data["bus"] if data["bus"][N_id]["area"]==2]
     # Set of slack nodes
     N_sl = m.ext[:sets][:N_sl] = [bus_id for (bus_id,bus) in data["bus"] if bus["bus_type"]==3]
     # Set of AC branches
@@ -137,6 +139,8 @@ end
 function process_parameters!(m::Model, data::Dict, ts::DataFrame, tsw::DataFrame)
     # Extract sets
     N = m.ext[:sets][:N]
+    N1=m.ext[:sets][:N1]
+    N2=m.ext[:sets][:N2]
     B = m.ext[:sets][:B]
     G = m.ext[:sets][:G]
     G1 = m.ext[:sets][:G1]
