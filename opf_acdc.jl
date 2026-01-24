@@ -57,7 +57,7 @@ optimize!(m)
 
 #plotfunction_modify!(m) # Plot the results
 
-#plotfunction_frequency!(m) # Plot the results
+plotfunction_frequency!(m) # Plot the results
 
 #printparameters!(m) # Print the results
 

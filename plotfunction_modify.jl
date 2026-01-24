@@ -326,7 +326,7 @@ ax18=fig18[1, 1] = Axis(fig18,
     lines!(ax18, pb_23, label = "Flow Bus 2 to 3")
     lines!(ax18, pb_12, label = "Flow Bus 1 to 2")
 fig18[1, 2] = Legend(fig18, ax18, "Area 1 Flows", framevisible = false)
-fig18y
+fig18
 
 fig19=Figure()
 ax19=fig19[1, 1] = Axis(fig19,
