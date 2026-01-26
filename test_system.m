@@ -101,9 +101,9 @@ mpc.branchdc = [
 %% generator cost data
 % 1-model  2-startup  3-shutdown  4-n   5-c2   6-c1($/MWh)  7-c0
 mpc.gencost = [
-    2        0            0         3     0        20          0;   % G1
-    2        0            0         3     0        30          0;   % G2
-    2        0            0         3     0        40          0;   % G3
+    2        0            0         3     0        1          0;   % G1
+    2        0            0         3     0        1          0;   % G2
+    2        0            0         3     0        1          0;   % G3
     2        0            0         3     0        25          0;   % G4
     2        0            0         3     0        35          0;   % G5
     2        0            0         3     0        45          0;   % G6

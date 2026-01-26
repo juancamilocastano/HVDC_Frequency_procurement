@@ -221,27 +221,31 @@ function build_ac_opf_acdc_modify!(m::Model)
     es = m.ext[:variables][:es] = @variable(m, [s=S,t=T], lower_bound= Sstoragemax[s]*(1-Sdod[s]), upper_bound=Sstoragemax[s] , base_name="es") #Energy bounds of the batteries
     zs = m.ext[:variables][:zs] = @variable(m, [s=S,t=T], binary=true, base_name="zb") #standby indicator of the batteries
 
+    #absolute value variables for penalazing power HVDC flows
+    flow_hvdc_abs= m.ext[:variables][:flow_hvdc_abs] = @variable(m, [(d,e,f)=BD_dc, t=T], lower_bound=0, base_name="flow_hvdc_abs") # from side active power flow (i->j)
+
+
     ##### Objective
     max_gen_ncost = m.ext[:parameters][:gen_max_ncost]
     if max_gen_ncost == 1
         m.ext[:objective] = @objective(m, Min,
                 sum(gen_cost[g][1]
-                        for g in G)+sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
+                        for g in G)+sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)+sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
         )
     elseif max_gen_ncost == 2
        m.ext[:objective] = @objective(m, Min,
             sum(gen_cost[g][1] * pg[g, t] + gen_cost[g][2] 
-                    for g in G, t in T)+sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
+                    for g in G, t in T)+sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)+sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
         )
     elseif max_gen_ncost == 3
         m.ext[:objective] = @NLobjective(m, Min,
                 sum(gen_cost[g][1]*pg[g,t]^2 + gen_cost[g][2]*pg[g,t] + gen_cost[g][3]
-                        for g in G, t in T)+sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
+                        for g in G, t in T)+sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)+sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
         )
     elseif max_gen_ncost == 4
         m.ext[:objective] = @NLobjective(m, Min,
                 sum(gen_cost[g][1]*pg[g,t]^3 + gen_cost[g][2]*pg[g,t]^2 + gen_cost[g][3]*pg[g,t] + gen_cost[g][4]
-                        for g in G, t in T)+sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
+                        for g in G, t in T)+sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)+sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
         )
     end
 
@@ -474,7 +478,15 @@ function build_ac_opf_acdc_modify!(m::Model)
         m.ext[:constraints][:compressor_power] = @constraint(m, [e in E, t in T],
         pe_compressor[e,t] == Ecompressorpower[e]*(hfe[e,t]+hfgconsum[e,t]+hfginyect[e,t])
         )
+        #Absolute value constraints
+  
+        m.ext[:constraints][:direccional_flow_dc] = @constraint(m, [(d,f,e) = BD_dc,t=T],
+        flow_hvdc_abs[(d,f,e),t] >=  brdc_p[(d, e, f),t]
+        )
 
+        m.ext[:constraints][:direccional_flow_dc] = @constraint(m, [(d,f,e) = BD_dc,t=T],
+        flow_hvdc_abs[(d,f,e),t] >=  -brdc_p[(d, e, f),t]
+        )   
         
 
 

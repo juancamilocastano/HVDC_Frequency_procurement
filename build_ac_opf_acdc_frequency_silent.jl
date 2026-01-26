@@ -278,6 +278,10 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
     # Other variables
     rcu=m.ext[:variables][:rcu]=@variable(m,[n=N,t=T],lower_bound=0, upper_bound=wind[n][t], base_name="rcu") #Renewable curtailment
 
+    #absolute value variables for penalazing power HVDC flows
+    flow_hvdc_abs= m.ext[:variables][:flow_hvdc_abs] = @variable(m, [(d,e,f)=BD_dc, t=T], lower_bound=0, base_name="flow_hvdc_abs") # from side active power flow (i->j)
+
+
     
 
     ##### Objective
@@ -291,7 +295,8 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
                             +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
                             +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
-                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1+slackreserve2 for t in T)*baseMVA*15000
+                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1+slackreserve2 for t in T)*baseMVA*15
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
 
         )
     elseif max_gen_ncost == 2
@@ -303,7 +308,8 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
                             +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
                             +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
-                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*15000
+                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*15
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
         )
     elseif max_gen_ncost == 3
         m.ext[:objective] = @NLobjective(m, Min,
@@ -314,8 +320,9 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
                             +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
                             +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
                             +sum(G_Reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
-                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*15000
-        )
+                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*15
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
+        )   
     elseif max_gen_ncost == 4
         m.ext[:objective] = @NLobjective(m, Min,
                 sum(gen_cost[g][1]*pg[g,t]^3 + gen_cost[g][2]*pg[g,t]^2 + gen_cost[g][3]*pg[g,t] + gen_cost[g][4]
@@ -325,7 +332,8 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
                             +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
                             +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
                             +sum(G_Reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
-                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*15000
+                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*2.5
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0.1
         )
     end
 
@@ -822,6 +830,16 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
     )
     m.ext[:constraints][:time_nadir_occurrence_c2_2]= @constraint(m, [t in T],
     plc2[t]>=0.00001+slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)+sum(rg[g,t] for g in G2)*Edeployment["1"]/G_dt["1"]
+    )
+
+    #Absolute value constraints
+  
+    m.ext[:constraints][:direccional_flow_dc] = @constraint(m, [(d,f,e) = BD_dc,t=T],
+    flow_hvdc_abs[(d,f,e),t] >=  brdc_p[(d, e, f),t]
+    )
+
+     m.ext[:constraints][:direccional_flow_dc] = @constraint(m, [(d,f,e) = BD_dc,t=T],
+    flow_hvdc_abs[(d,f,e),t] >=  -brdc_p[(d, e, f),t]
     )
     
 

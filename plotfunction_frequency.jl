@@ -61,6 +61,9 @@ re=JuMP.value.(m.ext[:variables][:re])*baseMVA
 revec1= [re[e,t] for e in E1, t in T]
 revec2= [re[e,t] for e in E2, t in T]
 rhvdc=JuMP.value.(m.ext[:variables][:rhvdc])*baseMVA
+keys = axes(rhvdc, 1)
+order_keys = sort(keys, by = x -> parse(Int, x))
+rhvdcvec= Array(rhvdc[order_keys, :])
 rhvdcvec1= [rhvdc[cv,t] for cv in CV1, t in T]
 rhvdcvec2= [rhvdc[cv,t] for cv in CV2, t in T]
 flows_hvdc=JuMP.value.(m.ext[:variables][:brdc_p])*baseMVA
@@ -416,6 +419,32 @@ fig19[1, 2] = Legend(fig19, ax19, "Area 2 Flows", framevisible = false)
 fig19
 
 
+fig20=Figure()
+ax20=fig20[1, 1] = Axis(fig20,
+    title = "Flow+Reserve",
+    xlabel = "Time (hours)",
+    ylabel = "Power (MW)"
+)
+    lines!(ax20, flows_hvdc31 + rhvdcvec[1,:], label = "Flow31 + Reserve Converter 1")
+    lines!(ax20, -flows_hvdc31 + rhvdcvec[3,:], label = "Flow13 + Reserve Converter 2")
+    lines!(ax20, flows_hvdc24 + rhvdcvec[4,:], label = "Flow24 + Reserve Converter 4")
+    lines!(ax20, -flows_hvdc24 + rhvdcvec[2,:], label = "Flow42 + Reserve Converter 2")
+fig20[1, 2] = Legend(fig20, ax20, "Flow + Reserve", framevisible = false)
+fig20
+
+fig21=Figure()
+ax21=fig21[1, 1] = Axis(fig21,
+    title = "Reserve per converter",
+    xlabel = "Time (hours)",
+    ylabel = "Power (MW)"
+)
+lines!(ax21, rhvdcvec[1,:], label = "Reserve Converter 1")
+lines!(ax21, rhvdcvec[2,:], label = "Reserve Converter 2")
+lines!(ax21, rhvdcvec[3,:], label = "Reserve Converter 3")
+lines!(ax21, rhvdcvec[4,:], label = "Reserve Converter 4")
+fig21[1, 2] = Legend(fig21, ax21, "Reserve per converter", framevisible = false)
+fig21
+
 save("hydrogen_storage1.png", fig1)
 save("hydrogen_storage_2.png", fig2)
 save("storage_power_energy_1.png", fig3)
@@ -435,6 +464,8 @@ save("5_Net_demand.png",fig16)
 save("4_Net_demand_without_HVDC.png",fig17)
 save("Area1_flows.png",fig18)
 save("Area2_flows.png",fig19)
+save("Flow_plus_Reserve.png",fig20)
+save("Reserve_per_converter.png",fig21)
 end
 
 

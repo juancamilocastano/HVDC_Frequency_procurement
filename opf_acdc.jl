@@ -71,7 +71,7 @@ optimize!(m)
 
 plotfunction_frequency!(m) # Plot the results
 
-#printparameters!(m) # Print the results
+printparameters!(m) # Print the results
 
 
 
@@ -81,8 +81,6 @@ open(filename, "w") do file
     
     println(file, "Objective: ", objective_value(m))
 end
-
-
 
 
 solution_summary(m)
