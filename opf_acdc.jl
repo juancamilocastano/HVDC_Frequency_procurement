@@ -20,6 +20,18 @@ case_file = joinpath(path,"test_system.m")
 
 # For convenience, use the parser of Powermodels to convert the MATPOWER format file to a Julia dictionary
 data = PowerModels.parse_file(case_file)
+
+#Original dictionary with information from power models
+data_convdc=copy(data["convdc"])
+#New keys structure
+new_keys= Dict{String,String}()
+for (k, v) in data_convdc
+    new_keys[k] = string(v["busdc_i"])
+end
+#Diccionary corresponding to converter dc associated with same numenclature bus dc
+data["convdc"] = Dict(new_keys[k] => v for (k, v) in data_convdc)
+
+
 ts = CSV.read("Load_data_hvdc.csv", DataFrame)
 tsw= CSV.read("Wind_data_hvdc.csv", DataFrame)
 
@@ -69,6 +81,7 @@ open(filename, "w") do file
     
     println(file, "Objective: ", objective_value(m))
 end
+
 
 
 
