@@ -37,6 +37,7 @@ tsw= CSV.read("Wind_data_hvdc.csv", DataFrame)
 
 # Initialize the JuMP model (an empty JuMP model) with defined solver
 m = Model(gurobi)
+#set_optimizer_attribute(m, "MIPGap", 0.0003)
 
 ##### Step 2: create the JuMP model & pass data to model
 include(joinpath(path,"init_model.jl")) # Define functions define_sets! and process_parameters!
@@ -75,7 +76,7 @@ printparameters!(m) # Print the results
 
 
 
-filename = "objective.txt"
+filename = "1_objective.txt"
 
 open(filename, "w") do file
     

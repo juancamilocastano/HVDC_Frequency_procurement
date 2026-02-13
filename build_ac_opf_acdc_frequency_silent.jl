@@ -259,10 +259,10 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
     plg2= m.ext[:variables][:plg2] = @variable(m, [t=T], lower_bound=0, base_name="plg2") # loss of power generators area 2
     plc1= m.ext[:variables][:plc1] = @variable(m, [t=T], lower_bound=0, base_name="plc1") # loss of power converters area 1
     plc2= m.ext[:variables][:plc2] = @variable(m, [t=T], lower_bound=0, base_name="plc2") # loss of power converters area 2
-    slackinercia1= m.ext[:variables][:slackinercia1] = @variable(m, [t=T], lower_bound=0, upper_bound=100, base_name="slackinercia1") # slack inertia area 1
-    slackinercia2= m.ext[:variables][:slackinercia2] = @variable(m, [t=T], lower_bound=0,upper_bound=100, base_name="slackinercia2") # slack inertia area 2
-    slackreserve1= m.ext[:variables][:slackreserve1] = @variable(m, [t=T], lower_bound=0,upper_bound=100, base_name="slackreserve1") # slack reserve area 1
-    slackreserve2= m.ext[:variables][:slackreserve2] = @variable(m, [t=T], lower_bound=0,upper_bound=100, base_name="slackreserve2") # slack reserve area 2
+    slackinercia1= m.ext[:variables][:slackinercia1] = @variable(m, [t=T], lower_bound=0, upper_bound=0, base_name="slackinercia1") # slack inertia area 1
+    slackinercia2= m.ext[:variables][:slackinercia2] = @variable(m, [t=T], lower_bound=0,upper_bound=0, base_name="slackinercia2") # slack inertia area 2
+    slackreserve1= m.ext[:variables][:slackreserve1] = @variable(m, [t=T], lower_bound=0,upper_bound=0, base_name="slackreserve1") # slack reserve area 1
+    slackreserve2= m.ext[:variables][:slackreserve2] = @variable(m, [t=T], lower_bound=0,upper_bound=0, base_name="slackreserve2") # slack reserve area 2
 
     #Auxiliary variables for rotated second order cone constraints
     ypg1 = m.ext[:variables][:ypg1] = @variable(m, [t=T],lower_bound=0, base_name="ypg1") #Auxiliary variable rotate second order cone generators fault area 1
@@ -295,8 +295,8 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
                             +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
                             +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
-                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1+slackreserve2 for t in T)*baseMVA*15
-                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
+                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1+slackreserve2 for t in T)*baseMVA*0
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
 
         )
     elseif max_gen_ncost == 2
@@ -308,8 +308,8 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
                             +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
                             +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
-                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*15
-                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
+                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*0
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
         )
     elseif max_gen_ncost == 3
         m.ext[:objective] = @NLobjective(m, Min,
@@ -320,8 +320,8 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
                             +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
                             +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
                             +sum(G_Reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
-                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*15
-                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*2.5
+                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*0
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
         )   
     elseif max_gen_ncost == 4
         m.ext[:objective] = @NLobjective(m, Min,
@@ -332,8 +332,8 @@ function build_ac_opf_acdc_frequency_silent!(m::Model)
                             +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
                             +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
                             +sum(G_Reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
-                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*2.5
-                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0.1
+                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*0
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
         )
     end
 
