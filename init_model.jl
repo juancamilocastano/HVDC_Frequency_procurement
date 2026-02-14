@@ -16,6 +16,7 @@ function define_sets!(m::Model, data::Dict, ts::DataFrame, tsw::DataFrame)
     B = m.ext[:sets][:B] = [br_id for (br_id,branch) in data["branch"]]
     # Set of generators
     G = m.ext[:sets][:G] = [gen_id for (gen_id,gen) in data["gen"]]
+    G_contingencies = Dict("G" * gen_id => data["genextra"][gen_id]["col_9"] for gen_id in G)
     G1=m.ext[:sets][:G1]= [gen_id for (gen_id,gen) in data["genextra"] if data["genextra"][gen_id]["col_9"]==1]
     G2=m.ext[:sets][:G2]= [gen_id for (gen_id,gen) in data["genextra"] if data["genextra"][gen_id]["col_9"]==2]
     # Set of loads
@@ -114,11 +115,12 @@ function define_sets!(m::Model, data::Dict, ts::DataFrame, tsw::DataFrame)
         end
     end
     m.ext[:sets][:bus_ij_ji] = [m.ext[:sets][:bus_ij];m.ext[:sets][:bus_ji]]
-
-         #storage connectivity
-
-
+        
+   # Create a dictionary for contingencies Converters
+    CV_contingencies = Dict("CV" * conv_id => data["convdc"][conv_id]["area"] for conv_id in CV)
     return 
+    # Join contingencies dictionary
+    all_contingencies = m.ext[:sets][:all_contingencies] = merge(G_contingencies, CV_contingencies)
 
 
 end
