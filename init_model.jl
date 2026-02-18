@@ -118,9 +118,10 @@ function define_sets!(m::Model, data::Dict, ts::DataFrame, tsw::DataFrame)
         
    # Create a dictionary for contingencies Converters
     CV_contingencies = Dict("CV" * conv_id => data["convdc"][conv_id]["area"] for conv_id in CV)
-    return 
     # Join contingencies dictionary
     all_contingencies = m.ext[:sets][:all_contingencies] = merge(G_contingencies, CV_contingencies)
+    return 
+
 
 
 end
@@ -149,6 +150,7 @@ function process_parameters!(m::Model, data::Dict, ts::DataFrame, tsw::DataFrame
     G2 = m.ext[:sets][:G2]
     L = m.ext[:sets][:L]
     T=m.ext[:sets][:t]
+    all_contingencies = m.ext[:sets][:all_contingencies]
 
 
     ND = m.ext[:sets][:ND]

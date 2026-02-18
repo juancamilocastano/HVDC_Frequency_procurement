@@ -1,4 +1,4 @@
-function build_ac_opf_acdc_frequency_silent_3!(m::Model)
+function build_ac_opf_acdc_frequency_silent_4!(m::Model)
     # This function builds the polar form of a nonlinear AC power flow formulation
 
     # Create m.ext entries "variables", "expressions" and "constraints"
@@ -198,6 +198,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     CV1 = m.ext[:sets][:CV1]
     CV2 = m.ext[:sets][:CV2]
     all_contingencies = m.ext[:sets][:all_contingencies]
+    keys_contingency = collect(keys(all_contingencies))
 
 
 
@@ -260,6 +261,8 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     plg2= m.ext[:variables][:plg2] = @variable(m, [t=T], lower_bound=0, base_name="plg2") # loss of power generators area 2
     plc1= m.ext[:variables][:plc1] = @variable(m, [t=T], lower_bound=0, base_name="plc1") # loss of power converters area 1
     plc2= m.ext[:variables][:plc2] = @variable(m, [t=T], lower_bound=0, base_name="plc2") # loss of power converters area 2
+    plf1= m.ext[:variables][:plf1] = @variable(m, [t=T], lower_bound=0, base_name="plf1") # frequency provision as a loss of generation area 1
+    plf2= m.ext[:variables][:plf2] = @variable(m, [t=T], lower_bound=0, base_name="plf2") # frequency provision as a loss of generation area 2
     slackinercia1= m.ext[:variables][:slackinercia1] = @variable(m, [t=T], lower_bound=0, upper_bound=0, base_name="slackinercia1") # slack inertia area 1
     slackinercia2= m.ext[:variables][:slackinercia2] = @variable(m, [t=T], lower_bound=0,upper_bound=0, base_name="slackinercia2") # slack inertia area 2
     slackreserve1= m.ext[:variables][:slackreserve1] = @variable(m, [t=T], lower_bound=0,upper_bound=0, base_name="slackreserve1") # slack reserve area 1
@@ -275,47 +278,16 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     ypc2 = m.ext[:variables][:ypc2] = @variable(m, [t=T],lower_bound=0, base_name="ypc2") #Auxiliary variable rotate second order cone converters fault area 2
     zpc2 = m.ext[:variables][:zpc2] = @variable(m, [t=T],lower_bound=0, base_name="zpc2") #Auxiliary variable rotate second order cone converters fault area 2
 
-
+    #Auxiliary variables for rotated second order con constraints for frequency provision as a loss of generation
+    yp_freq_1 = m.ext[:variables][:yp_freq_1] = @variable(m, [t=T],lower_bound=0, base_name="yp_freq_1") #Auxiliary variable rotate second order cone frequency provision as a loss of generation area 1
+    zp_freq_1 = m.ext[:variables][:zp_freq_1] = @variable(m, [t=T],lower_bound=0, base_name="zp_freq_1") #Auxiliary variable rotate second order cone frequency provision as a loss of generation area 1
+    yp_freq_2 = m.ext[:variables][:yp_freq_2] = @variable(m, [t=T],lower_bound=0, base_name="yp_freq_2") #Auxiliary variable rotate second order cone frequency provision as a loss of generation area 2
+    zp_freq_2 = m.ext[:variables][:zp_freq_2] = @variable(m, [t=T],lower_bound=0, base_name="zp_freq_2") #Auxiliary variable rotate second order cone frequency provision as a loss of generation area 2
     # Other variables
     rcu=m.ext[:variables][:rcu]=@variable(m,[n=N,t=T],lower_bound=0, upper_bound=wind[n][t], base_name="rcu") #Renewable curtailment
 
     #absolute value variables for penalazing power HVDC flows
     flow_hvdc_abs= m.ext[:variables][:flow_hvdc_abs] = @variable(m, [(d,e,f)=BD_dc, t=T], lower_bound=0, base_name="flow_hvdc_abs") # from side active power flow (i->j)
-
-    #Second stage variables
-    
-    keys_contingency = collect(keys(all_contingencies))
-    # Generator response contingency
-    rg_pos = m.ext[:variables][:rgc_pos] = @variable(m, [g=G,t=T, c=keys_contingency],lower_bound=0, base_name = "rg_pos") # frequency reserve generators in contingency
-    #converter response contingency
-    rhvdc_pos = m.ext[:variables][:rhvdc_pos] = @variable(m, [cv=CV,t=T, c=keys_contingency],lower_bound=0,  base_name = "rhvdc_pos") # frequency reserve hvdc in contingency  
-    #storage response contingency
-    rs_pos = m.ext[:variables][:rsc_pos] = @variable(m, [s=S,t=T, c=keys_contingency],lower_bound=0, base_name = "rs_pos") # frequency reserve storage in contingency
-    #electrolyzer response contingency
-    re_pos = m.ext[:variables][:rec_pos] = @variable(m, [e=E,t=T, c=keys_contingency],lower_bound=0, base_name = "re_pos") # frequency reserve electrolyzer in contingency
-
-    #DC grid (post-fault)
-
-    conv_p_ac_pos = m.ext[:variables][:conv_p_ac_pos] = @variable(m, [cv=CV,t=T,c=keys_contingency], lower_bound=-conv_p_ac_max[cv], upper_bound=conv_p_ac_max[cv], base_name="conv_p_ac_pos") # converter ac power post contingency
-    conv_p_dc_pos = m.ext[:variables][:conv_p_dc_pos] = @variable(m, [cv=CV,t=T,c=keys_contingency], lower_bound=-conv_p_dc_max[cv], upper_bound=conv_p_dc_max[cv], base_name="conv_p_dc_pos") # converter dc power post contingency
-    brdc_p_pos = m.ext[:variables][:brdc_p_pos] = @variable(m, [(d,e,f)=BD_dc, t=T, c=keys_contingency], lower_bound=-brdc_rate_a[d], upper_bound=brdc_rate_a[d], base_name="brdc_p_pos") # DC branch power flow post contingency
-
-    #Frequency stability post contingency variables
-    slackinercia1_pos= m.ext[:variables][:slackinercia1_pos] = @variable(m, [t=T,c=keys_contingency], lower_bound=0, upper_bound=0, base_name="slackinercia1_pos") # slack inertia area 1
-    slackinercia2_pos= m.ext[:variables][:slackinercia2_pos] = @variable(m, [t=T,c=keys_contingency], lower_bound=0,upper_bound=0, base_name="slackinercia2_pos") # slack inertia area 2
-    slackreserve1_pos= m.ext[:variables][:slackreserve1_pos] = @variable(m, [t=T,c=keys_contingency], lower_bound=0,upper_bound=0, base_name="slackreserve1_pos") # slack reserve area 1
-    slackreserve2_pos= m.ext[:variables][:slackreserve2_pos] = @variable(m, [t=T,c=keys_contingency], lower_bound=0,upper_bound=0, base_name="slackreserve2_pos") # slack reserve area 2
-
-    
-    #Auxiliary variables for rotated second order cone constraints
-    ypg1_pos = m.ext[:variables][:ypg1_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="ypg1_pos") #Auxiliary variable rotate second order cone generators fault area 1
-    zpg1_pos = m.ext[:variables][:zpg1_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="zpg1_pos") #Auxiliary variable rotate second order cone generators fault area 1
-    ypc1_pos = m.ext[:variables][:ypc1_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="ypc1_pos") #Auxiliary variable rotate second order cone converters fault area 1
-    zpc1_pos = m.ext[:variables][:zpc1_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="zpc1_pos") #Auxiliary variable rotate second order cone converters fault area 1
-    ypg2_pos = m.ext[:variables][:ypg2_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="ypg2_pos") #Auxiliary variable rotate second order cone generators fault area 2
-    zpg2_pos = m.ext[:variables][:zpg2_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="zpg2_pos") #Auxiliary variable rotate second order cone generators fault area 2
-    ypc2_pos = m.ext[:variables][:ypc2_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="ypc2_pos") #Auxiliary variable rotate second order cone converters fault area 2
-    zpc2_pos = m.ext[:variables][:zpc2_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="zpc2_pos") #Auxiliary variable rotate second order cone converters fault area 2
 
 
     
@@ -383,11 +355,11 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
         # Voltage angle on reference bus = 0
 
 
-    m.ext[:constraints][:varef] = @constraint(m, [n_sl=N_sl,t=T], va[n_sl,t] == 0) #3.6
+    m.ext[:constraints][:varef] = @constraint(m, [n_sl=N_sl,t=T], va[n_sl,t] == 0)
 
-    #Nodal power balance constraint AC taken from https://github.com/Electa-Git/OPES/blob/main/opf_acdc/build_ac_opf_acdc_tap.jl line 421
+    #Nodal power balance constraint AC
         m.ext[:constraints][:power_balance] = @constraint(m, [n=N,t=T],
-        sum(pg[g,t] for g in G if gen_bus[g] == n) +wind[n][t]-rcu[n,t]+sum(psd[s,t] for s in S if storage_bus[s] == n)-sum(psc[s,t] for s in S if storage_bus[s] == n)  - sum(pb[(br,i,j),t] for (br,i,j) in B_arcs[n])- sum(conv_p_ac[cv,t] for cv in CV if conv_bus[cv] == n) -sum(pe[e,t] for e in E if electrolyzer_bus[e] == n ) -sum(pe_compressor[e,t] for e in E if electrolyzer_bus[e] == n )-demand[n][t]== 0 #3.7
+        sum(pg[g,t] for g in G if gen_bus[g] == n) +wind[n][t]-rcu[n,t]+sum(psd[s,t] for s in S if storage_bus[s] == n)-sum(psc[s,t] for s in S if storage_bus[s] == n)  - sum(pb[(br,i,j),t] for (br,i,j) in B_arcs[n])- sum(conv_p_ac[cv,t] for cv in CV if conv_bus[cv] == n) -sum(pe[e,t] for e in E if electrolyzer_bus[e] == n ) -sum(pe_compressor[e,t] for e in E if electrolyzer_bus[e] == n )-demand[n][t]== 0
         )
 
 
@@ -396,49 +368,52 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     #It is assumed that the reactance is 0.13 p.u. based on the test system data
     m.ext[:constraints][:pbij] = @constraint(m, [(b,i,j) = B_ac_fr,t=T],
         pb[(b, i, j),t] ==  1/0.13*(va[i,t] - va[j,t])
-        ) #3.8
+        )
 
          #It is assumed that the reactance is 0.13 p.u. based on the test system data
     m.ext[:constraints][:directional_flow_ac] = @constraint(m, [(b,i,j) = B_ac_fr,t=T],
         pb[(b, i, j),t] ==  -pb[(b, j, i),t]
         )
 
-    # # Power flow constraints in from and to direction
-    # m.ext[:constraints][:pbij] = @constraint(m, [(b,i,j) = B_ac_fr,t=T], pb[(b, i, j),t] ==  - 1/0.13*  (va[i,t] - va[j,t])) # active power i to j
-    # m.ext[:constraints][:pbji] = @constraint(m, [(b,j,i) = B_ac_to,t=T], pb[(b, j, i),t] ==  - 1/0.13* (va[j,t] - va[i,t])) # active power j to i
 
-    # # Branch angle limits
-    # m.ext[:constraints][:thetaij] = @constraint(m, [(b,i,j) = B_ac_fr,t=T], va[i,t] - va[j,t] <= angmax[b])
-    # m.ext[:constraints][:thetaji] = @constraint(m, [(b,i,j) = B_ac_fr,t=T], va[i,t] - va[j,t] >= angmin[b])
-    # m.ext[:constraints][:thetaij] = @constraint(m, [(b,j,i) = B_ac_to,t=T], va[j,t] - va[i,t] <= angmax[b])
-    # m.ext[:constraints][:thetaji] = @constraint(m, [(b,j,i) = B_ac_to,t=T], va[j,t] - va[i,t] >= angmin[b])
-  
 
-     # active power i to j (I am not sure if this constraints has to be)
-    #m.ext[:constraints][:pbji] = @constraint(m, [(b,j,i) = B_ac_to,t=T],      
-    # pb[(b, i, j),t] ==  1/0.13*(va[i,t] - va[j,t])
-    #)
+    m.ext[:constraints][:max_gen_power_reserve_bound] = @constraint(m, [g=G,t=T],
+        pg[g,t]+rg[g,t] <= pmax[g]*zg[g,t]
+        )
+
+    m.ext[:constraints][:min_gen_power_reserve_bound] = @constraint(m, [g=G,t=T],
+        pg[g,t]+rg[g,t] >= pmin[g]*zg[g,t]
+        )
 
     m.ext[:constraints][:max_gen_power] = @constraint(m, [g=G,t=T],
         pg[g,t] <= pmax[g]*zg[g,t]
-        )#3.11
+        )
 
     m.ext[:constraints][:min_gen_power] = @constraint(m, [g=G,t=T],
         pg[g,t]>= pmin[g]*zg[g,t]
-        )#3.11
+        )
+
+    m.ext[:constraints][:max_fre_deliverable]= @constraint(m, [g=G,t=T],
+        rg[g,t] <= 0.2*pmax[g]*zg[g,t]
+        )
+
+        #Constraint maximum frequency reserve deliverable considering the ramping capability of the generators (from Hakan's code)
+        m.ext[:constraints][:max_fre_deliverable_ramping_constraint]= @constraint(m, [g=G,t=T],
+        rg[g,t] <= G_dt[g]*upramp[g]/3600
+        )
 
 
 
-    # Nodal power balance DC  taken from https://github.com/Electa-Git/OPES/blob/main/opf_acdc/build_ac_opf_acdc_tap.jl line 431
+    # Nodal power balance DC https://github.com/Electa-Git/OPES/blob/main/opf_acdc/build_ac_opf_acdc_tap.jl line 431
     m.ext[:constraints][:nodal_p_dc_balance] = @constraint(m, [nd=ND,t=T],
         -sum(conv_p_dc[cv,t] for cv in CV if conv_busdc[cv] == nd)- sum(brdc_p[(d,f,e),t] for (d,f,e) in ND_arcs[nd])==0
          
-         )#3.14
+         )
 
     # Converter AC-side and DC-side power balance taken from https://github.com/Electa-Git/OPES/blob/main/opf_acdc/build_ac_opf_acdc_tap.jl line 408
         m.ext[:constraints][:conv_p_loss] = @constraint(m, [cv=CV,t=T],
         conv_p_ac[cv,t] + conv_p_dc[cv,t]==0
-    )#3.17
+    )
 
 
                     #It is assumed that the reactance is 0.13 p.u. based on the test system data
@@ -457,25 +432,26 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     NT = length(Tlabels)
     #Ramp-up limit for generators
         m.ext[:constraints][:up_and_down_2_a] = @constraint(m, [g in G, k in 2:NT],
-        pg[g, Tlabels[k]] - pg[g, Tlabels[k-1]] <= upramp[g]+(pmin[g]- upramp[g])*betag[g, Tlabels[k]]
-    )#3.19
+        pg[g, Tlabels[k]]+rg[g, Tlabels[k]] - pg[g, Tlabels[k-1]] <= upramp[g]+(pmin[g]- upramp[g])*betag[g, Tlabels[k]]
+    )
 
  
     #Ramp-down limit for generators
           m.ext[:constraints][:up_and_down_2_b] = @constraint(m, [g in G, k in 2:NT],
         pg[g, Tlabels[k-1]] - pg[g, Tlabels[k]] <= downramp[g]+pmin[g]*gammag[g, Tlabels[k]]
-    )#3.20
+    )
 
  
   #Initial status generators (unit commitment)
         m.ext[:constraints][:up_and_down_3] = @constraint(m, [g in G],
         1 - zg[g, Tlabels[1]] + betag[g, Tlabels[1]] - gammag[g, Tlabels[1]] == 0
     )
+    
 
     #Status generators (unit commitment)
         m.ext[:constraints][:up_and_down_4] = @constraint(m, [g in G, k in 2:NT],
         zg[g, Tlabels[k-1]] - zg[g, Tlabels[k]] + betag[g, Tlabels[k]] - gammag[g, Tlabels[k]] == 0
-    )#3.23
+    )
 
     #Startup and shutdown exclusivity
         m.ext[:constraints][:up_and_down_4_1] = @constraint(m, [g=G, t=T],
@@ -488,12 +464,11 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
             if MUT[g] > 0  # Only proceed if MUT[g] is positive
                 for k in MUT[g]:NT
                     m.ext[:constraints][:up_and_down_6][g, Tlabels[k]] = @constraint(m,
-                    zg[g, Tlabels[k]] >= sum(betag[g, Tlabels[k-τ]] for τ in 0:MUT[g]-1)#3.22
+                    zg[g, Tlabels[k]] >= sum(betag[g, Tlabels[k-τ]] for τ in 0:MUT[g]-1)
                     )
                 end
             end
         end
-        
 
 
 
@@ -503,7 +478,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
         if MDT[g] > 0  # Only proceed if MDT[g] is positive
             for k in MDT[g]:NT
                 m.ext[:constraints][:up_and_down_7][g, Tlabels[k]] = @constraint(m,
-                1 - zg[g, Tlabels[k]] >= sum(gammag[g, Tlabels[k-τ]] for τ in 0:MDT[g]-1)#3.21
+                1 - zg[g, Tlabels[k]] >= sum(gammag[g, Tlabels[k-τ]] for τ in 0:MDT[g]-1)
                 )
             end
         end
@@ -513,17 +488,17 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
     m.ext[:constraints][:upper_bound_storage_charging] = @constraint(m, [s = S, t = T],
     psc[s,t] <= Spmax[s] * (1 - zs[s,t])
-    )#3.25
+    )
 
     m.ext[:constraints][:upper_bound_storage_discharging] = @constraint(m, [s = S, t = T],
     psd[s,t] <= Spmax[s] * zs[s,t]
-    )#3.26
+    )
 
 
         # Initial energy value of the batteries
         m.ext[:constraints][:initial_energy_value] = @constraint(m, [s in S],
             es[s, Tlabels[1]] == Senergyinitial[s]
-        )#3.27
+        )
 
 
         # End energy value of the batteries
@@ -532,16 +507,19 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
             Senergyend[s] - es[s, Tlabels[NT]] ==
                 Sefficiencycarga[s] * psc[s, Tlabels[NT]] -
                 psd[s, Tlabels[NT]] / Sefficiencydischarge[s]
-        )#3.27
+        )
 
         # Charging–discharging energy balance of the batteries
         m.ext[:constraints][:energy_balance] = @constraint(m, [s in S, k in 1:NT-1],
         es[s, Tlabels[k+1]] - es[s, Tlabels[k]] ==
             Sefficiencycarga[s] * psc[s, Tlabels[k]] -
             psd[s, Tlabels[k]] / Sefficiencydischarge[s]
-    )#3.27
+    )
 
-
+    #Reserve constraints
+    m.ext[:constraints][:reserve_storage]=@constraint(m, [s=S, t=T],
+        rs[s,t] <=  Spmax[s]+psc[s,t]-psd[s,t]
+    )
 
 # Electrolyzer constraints
 
@@ -605,6 +583,10 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
         pe_compressor[e,t] == Ecompressorpower[e]*(hfe[e,t]+hfgconsum[e,t]+hfginyect[e,t])
         )
 
+    #Reserve electrolyzer bound constraint
+    m.ext[:constraints][:electrolyzer_reserve_upper_bound] = @constraint(m, [e = E, t = T],
+    re[e,t] <= pe[e,t]-Epmin[e] * ze[e,t] 
+    )
     
     #Events constraints (loss of generators)
     m.ext[:constraints][:gen_constraint_1]= @constraint(m, [g=G1,t=T],
@@ -612,7 +594,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     )
 
     m.ext[:constraints][:gen_constraint_2]= @constraint(m, [g=G2,t=T],
-    pg[g,t]<=plg2[t] 
+    pg[g,t]<=plg2[t]
     )
     #Events constraints (loss of converters)
     m.ext[:constraints][:conv_constraint_1]= @constraint(m, [cv=CV1,t=T],
@@ -705,9 +687,13 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     # Inertia value per area after the event
     Inertia_nadir_frequency_1=Dict()
     Inertia_nadir_frequency_2=Dict()
+    Inertia_nadir_frequency_converter_1=Dict()
+    Inertia_nadir_frequency_converter_2=Dict()
     for t in T 
         Inertia_nadir_frequency_1[t]=sum((zg[g,t]-δg[g,t])*ic[g]*pmax[g] for g in G1)
         Inertia_nadir_frequency_2[t]=sum((zg[g,t]-δg[g,t])*ic[g]*pmax[g] for g in G2)
+        Inertia_nadir_frequency_converter_1[t]=sum(zg[g,t]*ic[g]*pmax[g] for g in G1)
+        Inertia_nadir_frequency_converter_2[t]=sum(zg[g,t]*ic[g]*pmax[g] for g in G2)
     end
     
 
@@ -716,7 +702,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
      rg[g,t]<=(1-δg[g,t])*pmax[g]
     )   
     m.ext[:constraints][:fcr_bound_conv]= @constraint(m, [cv in CV, t in T],
-         rhvdc[cv,t]<=(1-δhvdc[cv,t])*conv_p_dc_max[cv]
+         rhvdc[cv,t]<=(1-δhvdc[cv,t])*2*conv_p_dc_max[cv]
      )
 
 
@@ -731,19 +717,19 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
     #Rocof constraints generators and converters per areas
     m.ext[:constraints][:rocof_constraint_plg_1]= @constraint(m, [t in T],
-        f1*plg1[t] <= rocof1*(2*Inertia_nadir_frequency_1[t]+slackinercia1[t])
+        f1*plg1[t] <= rocof1*2*(*Inertia_nadir_frequency_1[t]+slackinercia1[t])
     )
 
     m.ext[:constraints][:rocof_constraint_plc_1]= @constraint(m, [t in T],
-        f1*plc1[t] <= rocof1*(2*Inertia_nadir_frequency_1[t]+slackinercia1[t])
+        f1*plc1[t] <= rocof1*2*(*Inertia_nadir_frequency_converter_1[t]+slackinercia1[t])
     )
     
     m.ext[:constraints][:rocof_constraint_plg_2]= @constraint(m, [t in T],
-        f2*plg2[t] <= rocof2*(2*Inertia_nadir_frequency_2[t]+slackinercia2[t])
+        f2*plg2[t] <= rocof2*2*(*Inertia_nadir_frequency_2[t]+slackinercia2[t])
     )
 
     m.ext[:constraints][:rocof_constraint_plc_2]= @constraint(m, [t in T],
-        f2*plc2[t] <= rocof2*(2*Inertia_nadir_frequency_2[t]+slackinercia2[t])
+        f2*plc2[t] <= rocof2*2*(*Inertia_nadir_frequency_converter_2[t]+slackinercia2[t])
     )
 
     #Power balance constraint
@@ -765,6 +751,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
     # Constraint frequency nadir generators and converters area 1
 
+        #Frequency nadir constraint for generators area 1
     m.ext[:constraints][:nadir_frequency_g_1_constraint_1]= @constraint(m, [t in T],
     ypg1[t]==2*deltaf1*(Inertia_nadir_frequency_1[t]+slackinercia1[t])/f1-sum(re[e,t]*Edeployment[e] for e in E1)/2-sum(rs[s,t]*Sdeployment[s] for s in S1)/2-sum(rhvdc[cv,t]*HVDC_deployment[cv] for cv in CV1)/2-slackreserve1[t]*0.2/2  
     )
@@ -773,25 +760,28 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     zpg1[t]==sum(rg[g,t]/G_dt[g] for g in G1)   
     )
 
-
-    m.ext[:constraints][:nadir_frequency_g_1_constraint_3] = @constraint(m,[t in T],
-    [ypc1[t]; zpc1[t]; plg1[t]-sum(re[e,t] for e in E1)-sum(rs[s,t] for s in S1)-sum(rhvdc[cv,t] for cv in CV1)-slackreserve1[t]] in RotatedSecondOrderCone()
+    m.ext[:constraints][:nadir_frequency_c_1_constraint_3] = @constraint(m,[t in T],
+    [ypg1[t]; zpg1[t]; plc1[t]-sum(re[e,t] for e in E1)-sum(rs[s,t] for s in S1)-sum(rhvdc[cv,t] for cv in CV1)-slackreserve1[t]] in RotatedSecondOrderCone()
     )
 
+        #Frequency nadir constraint for converters area 1
     m.ext[:constraints][:nadir_frequency_c_1_constraint_1]= @constraint(m, [t in T],
-    ypc1[t]==2*deltaf1*(Inertia_nadir_frequency_1[t]+slackinercia1[t])/f1-sum(re[e,t]*Edeployment[e] for e in E1)/2-sum(rs[s,t]*Sdeployment[s] for s in S1)/2-sum(rhvdc[cv,t]*HVDC_deployment[cv] for cv in CV1)/2-slackreserve1[t]*0.2/2
+    ypc1[t]==2*deltaf1*(Inertia_nadir_frequency_converter_1[t]+slackinercia1[t])/f1-sum(re[e,t]*Edeployment[e] for e in E1)/2-sum(rs[s,t]*Sdeployment[s] for s in S1)/2-sum(rhvdc[cv,t]*HVDC_deployment[cv] for cv in CV1)/2-slackreserve1[t]*0.2/2
     )
 
     m.ext[:constraints][:nadir_frequency_c_1_constraint_2]= @constraint(m, [t in T],
     zpc1[t]==sum(rg[g,t]/G_dt[g] for g in G1)
     )
 
-    m.ext[:constraints][:nadir_frequency_c_1_constraint_3] = @constraint(m,[t in T],
-    [ypg1[t]; zpg1[t]; plc1[t]-sum(re[e,t] for e in E1)-sum(rs[s,t] for s in S1)-sum(rhvdc[cv,t] for cv in CV1)-slackreserve1[t]] in RotatedSecondOrderCone()
+     m.ext[:constraints][:nadir_frequency_g_1_constraint_3] = @constraint(m,[t in T],
+    [ypc1[t]; zpc1[t]; plg1[t]-sum(re[e,t] for e in E1)-sum(rs[s,t] for s in S1)-sum(rhvdc[cv,t] for cv in CV1)-slackreserve1[t]] in RotatedSecondOrderCone()
     )
+
+
 
     #Constraint frequency nadir generators and converters area 2
 
+        #Frequency nadir constraint for generators area 2
     m.ext[:constraints][:nadir_frequency_g_2_constraint_1]= @constraint(m, [t in T],
     ypg2[t]==2*deltaf2*(Inertia_nadir_frequency_2[t]+slackinercia2[t])/f2-sum(re[e,t]*Edeployment[e] for e in E2)/2-sum(rs[s,t]*Sdeployment[s] for s in S2)/2-sum(rhvdc[cv,t]*HVDC_deployment[cv] for cv in CV2)/2-slackreserve2[t]*0.2/2
     )   
@@ -800,20 +790,25 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     zpg2[t]==sum(rg[g,t]/G_dt[g] for g in G2)   
     )
 
+    m.ext[:constraints][:nadir_frequency_c_2_constraint_3] = @constraint(m,[t in T],
+    [ypg2[t]; zpg2[t]; plc2[t]-sum(re[e,t] for e in E2)-sum(rs[s,t] for s in S2)-sum(rhvdc[cv,t] for cv in CV2)-slackreserve2[t]] in RotatedSecondOrderCone()
+    )
+
+        #Frequency nadir constraint for converters area 2
     m.ext[:constraints][:nadir_frequency_g_2_constraint_3] = @constraint(m,[t in T],
     [ypc2[t]; zpc2[t]; plg2[t]-sum(re[e,t] for e in E2)-sum(rs[s,t] for s in S2)-sum(rhvdc[cv,t] for cv in CV2)-slackreserve2[t]] in RotatedSecondOrderCone()
     )   
 
-    m.ext[:constraints][:nadir_frequency_c_2_constraint_1]= @constraint(m, [t in T],
-    ypc2[t]==2*deltaf2*(Inertia_nadir_frequency_2[t]+slackinercia2[t])/f2-sum(re[e,t]*Edeployment[e] for e in E2)/2-sum(rs[s,t]*Sdeployment[s] for s in S2)/2-sum(rhvdc[cv,t]*HVDC_deployment[cv] for cv in CV2)/2-slackreserve2[t]*0.2/2
-    )
-
-    m.ext[:constraints][:nadir_frequency_c_2_constraint_2]= @constraint(m, [t in T],
+     m.ext[:constraints][:nadir_frequency_c_2_constraint_2]= @constraint(m, [t in T],
     zpc2[t]==sum(rg[g,t]/G_dt[g] for g in G2)
     )
-    m.ext[:constraints][:nadir_frequency_c_2_constraint_3] = @constraint(m,[t in T],
-    [ypg2[t]; zpg2[t]; plc2[t]-sum(re[e,t] for e in E2)-sum(rs[s,t] for s in S2)-sum(rhvdc[cv,t] for cv in CV2)-slackreserve2[t]] in RotatedSecondOrderCone()
+
+    m.ext[:constraints][:nadir_frequency_c_2_constraint_1]= @constraint(m, [t in T],
+    ypc2[t]==2*deltaf2*(Inertia_nadir_frequency_converter_2[t]+slackinercia2[t])/f2-sum(re[e,t]*Edeployment[e] for e in E2)/2-sum(rs[s,t]*Sdeployment[s] for s in S2)/2-sum(rhvdc[cv,t]*HVDC_deployment[cv] for cv in CV2)/2-slackreserve2[t]*0.2/2
     )
+
+
+ 
 
     #Constraint time occurrence nadir
     m.ext[:constraints][:time_nadir_occurrence_g1_1]= @constraint(m, [t in T],
@@ -846,60 +841,61 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
     #Absolute value constraints
   
-    m.ext[:constraints][:direccional_flow_dc_positive] = @constraint(m, [(d,f,e) = BD_dc,t=T],
+    m.ext[:constraints][:direccional_flow_dc_abs_1] = @constraint(m, [(d,f,e) = BD_dc,t=T],
     flow_hvdc_abs[(d,f,e),t] >=  brdc_p[(d, e, f),t]
     )
 
-     m.ext[:constraints][:direccional_flow_dc_negative] = @constraint(m, [(d,f,e) = BD_dc,t=T],
+     m.ext[:constraints][:direccional_flow_dc_abs_2] = @constraint(m, [(d,f,e) = BD_dc,t=T],
     flow_hvdc_abs[(d,f,e),t] >=  -brdc_p[(d, e, f),t]
     )
+
+    #Frequency stability constraints for HVDC power balance provision seen as a loss of generation.
     
-    #post contingency power flow constraint
-
-
-
-          # Nodal power balance DC post contigency
-    m.ext[:constraints][:nodal_p_dc_balance_pos] = @constraint(m, [nd=ND,t=T,c=keys_contingency],
-        -sum(conv_p_dc_pos[cv,t,c] for cv in CV if conv_busdc[cv] == nd)- sum(brdc_p_pos[(d,f,e),t,c] for (d,f,e) in ND_arcs[nd])==0
-         
-         )
-
-    # Converter AC-side and DC-side power balance post contingency
-        m.ext[:constraints][:conv_p_loss_pos] = @constraint(m, [cv=CV,t=T,c=keys_contingency],
-        conv_p_ac_pos[cv,t,c] + conv_p_dc_pos[cv,t,c]==0
+        #Dimensioning event
+    m.ext[:constraints][:frequency_provision_power_imbalance_1]= @constraint(m, [t in T],
+        plf1[t] == sum(rhvdc[cv,t] for cv in CV2)
     )
 
-
-    #Constraint directional flow DC post contingency
-    m.ext[:constraints][:direccional_flow_dc_pos] = @constraint(m, [(d,f,e) = BD_dc_fr,t=T,c=keys_contingency],
-        brdc_p_pos[(d,f,e),t,c] ==  -brdc_p_pos[(d, e, f),t,c]
-        )
-
-    #constraints on the power delivered by generators post contingency
-    m.ext[:constraints][:max_gen_power] = @constraint(m, [g=G,t=T,c=keys_contingency],
-    pg[g,t]+rg_pos[g,t,c] <= pmax[g]*zg[g,t]
+    m.ext[:constraints][:frequency_provision_power_imbalance_2]= @constraint(m, [t in T],
+        plf2[t] == sum(rhvdc[cv,t] for cv in CV1)
+    )
+    
+        #RoCoF constraints for frequency reserve provision
+    m.ext[:constraints][:rocof_constraint_frequency_provision_1]= @constraint(m, [t in T],
+        f1*plf1[t] <= rocof1*2*(*Inertia_nadir_frequency_converter_1[t]+slackinercia1[t])
     )
 
-    m.ext[:constraints][:min_gen_power] = @constraint(m, [g=G,t=T,c=keys_contingency],
-    pg[g,t]+rg_pos[g,t,c] >= pmin[g]*zg[g,t]
+    m.ext[:constraints][:rocof_constraint_frequency_provision_2]= @constraint(m, [t in T],
+        f2*plf2[t] <= rocof2*2*(*Inertia_nadir_frequency_converter_2[t]+slackinercia2[t])
     )
 
-    m.ext[:constraints][:max_fre_deliverable]= @constraint(m, [g=G,t=T,c=keys_contingency],
-    rg_pos[g,t,c] <= 0.2*pmax[g]*zg[g,t]# replacement of 3.37 
+    #Power balance constraint for frequency reserve provision
+    m.ext[:constraints][:power_balance_frequency_provision_1]= @constraint(m, [t in T],
+        slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rg[g,t] for g in G1)>=plf1[t]
     )
 
-
-            #Reserve constraints
-        m.ext[:constraints][:reserve_storage]=@constraint(m, [s=S, t=T],
-            rs[s,t] <=  Spmax[s]+psc[s,t]-psd[s,t]
-        )
-
-        
-    #Reserve electrolyzer bound constraint
-    m.ext[:constraints][:electrolyzer_reserve_upper_bound] = @constraint(m, [e = E, t = T],
-    re[e,t] <= pe[e,t]-Epmin[e] * ze[e,t] 
+    m.ext[:constraints][:power_balance_frequency_provision_2]= @constraint(m, [t in T],
+        slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rg[g,t] for g in G2)>=plf2[t]
     )
 
+    #Constraint frequency nadir for frequency reserve provision
+    m.ext[:constraints][:nadir_frequency_frequency_provision_area1_constraint_1]= @constraint(m, [t in T],
+    ypf1[t]==2*deltaf1*(Inertia_nadir_frequency_converter_1[t]+slackinercia1[t])/f1-sum(re[e,t]*Edeployment[e] for e in E1)/2-sum(rs[s,t]*Sdeployment[s] for s in S1)/2-slackreserve1[t]*0.2/2  
+    )
+
+    m.ext[:constraints][:nadir_frequency_frequency_provision_area1_constraint_2]= @constraint(m, [t in T],
+    zpf1[t]==sum(rg[g,t]/G_dt[g] for g in G1)   
+    )
+
+    m.ext[:constraints][:nadir_frequency_frequency_provision_area1_constraint_3] = @constraint(m,[t in T],
+    [ypf1[t]; zpf1[t]; plf1[t]-sum(re[e,t] for e in E1)-sum(rs[s,t] for s in S1)-slackreserve1[t]] in RotatedSecondOrderCone()
+    )
+
+    m.ext[:constraints][:nadir_frequency_frequency_provision_area2_constraint_2]= @constraint(m, [t in T],
+    ypf2[t]==2*deltaf2*(Inertia_nadir_frequency_converter_2[t]+slackinercia2[t])/f2-sum(re[e,t]*Edeployment[e] for e in E2)/2-sum(rs[s,t]*Sdeployment[s] for s in S2)/2-slackreserve2[t]*0.2/2  
+    )
+
+ 
 
 
     return m 

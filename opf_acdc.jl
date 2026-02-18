@@ -51,14 +51,15 @@ include(joinpath(path,"build_ac_opf_acdc_frequency_silent.jl")) # Define build_a
 include(joinpath(path,"plotfunction_modify.jl")) # plot resutls
 include(joinpath(path,"plotfunction_frequency.jl"))
 include(joinpath(path,"printparameters.jl")) # print resutls
+include(joinpath(path,"build_ac_opf_acdc_frequency_silent_4.jl")) # print resutls
 
 #build_ac_opf_acdc_modify!(m) # Pass the model to the build_ac_opf_acdc! function
 #build_ac_opf_acdc_frequency!(m) # Pass the model to the build_ac_opf_acdc! function
-build_ac_opf_acdc_frequency_silent!(m) # Pass the model to the build_ac_opf_acdc! function
+build_ac_opf_acdc_frequency_silent_4!(m) # Pass the model to the build_ac_opf_acdc! function
 
 
 
-##### Step 4: Solve the modely
+##### Step 4: Solve the model
 
 
 # set_optimizer_attribute(m, "DualReductions", 0)
