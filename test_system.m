@@ -26,7 +26,7 @@ mpc.frequency2=50;
 mpc.rocof1=0.5;
 mpc.rocof2=0.4;
 mpc.deltaf1=0.8;
-mpc.deltaf2=0.7;
+mpc.deltaf2=0.8;
 
 %After Vm, they are generic values
 
@@ -112,12 +112,12 @@ mpc.gencost = [
 %% generator extra
 %   bus   DT   IC    upramp [Mw/h]   downramp [Mw/h]   MUT [h]   MDT [h]   reservecost_g   area
 mpc.genextra = [
-    1     15    50        720               720            4        4            4            1;
-    2     15    50        720               720            4        4            4            1;
-    3     15    50        720               720            4        4            4            1;
-    4     15    50        720               720            4        4            4            2;
-    5     15    50        720               720            4        4            4            2;
-    6     15    50        720               720            4        4            4            2;
+    1     15    24        720               720            4        4            4            1;
+    2     15    24        720               720            4        4            4            1;
+    3     15    24        720               720            4        4            4            1;
+    4     15    24        720               720            4        4            4            2;
+    5     15    24        720               720            4        4            4            2;
+    6     15    24        720               720            4        4            4            2;
 ];
 
 
@@ -134,8 +134,8 @@ mpc.bess = [
 %% Electrolyzer data
 %  1-AC_bus   2-area   3-Pmax_MW   4-Pmin_MW   5-eta_ely_MWh_per_kg   6-LoadFactor   7-max_hydrog_flow_kg   8-Smax_kg    9-Smin_kg   10-S0_kg   11-ST_kg   12-DeployTime_s   13-ReserveCost_£_per_MW_h   14-eta_c   15-eta_d   16-StartupCost_£   17-CompressEnergy_MWh_per_kg   18-Hydrogen_market_price_Eur_per_kg
 mpc.elec = [
-    3   1   55   7.5   0.058   0.8   1293.10   31034.48   310.34   7758.62   7758.62   0.2   15   0.9   0.9   855.5   0.00167   4;
-    6   2   45   6.5   0.058   0.8   1120.68   26896.50   268.96   6724.13   6724.13   0.2   15   0.9   0.9   855.5   0.00167   4;
+    3   1   55   7.5   0.058   0.8   1293.10   31034.48   310.34   7758.62   7758.62   0.2   15   0.9   0.9   855.5   0.00167   15;
+    6   2   45   6.5   0.058   0.8   1120.68   26896.50   268.96   6724.13   6724.13   0.2   15   0.9   0.9   855.5   0.00167   15;
 ];
 
 %% Wind data (reduced to 3 columns)

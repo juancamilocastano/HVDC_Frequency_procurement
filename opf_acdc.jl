@@ -64,7 +64,7 @@ build_ac_opf_acdc_frequency_silent_4!(m) # Pass the model to the build_ac_opf_ac
 
 # set_optimizer_attribute(m, "DualReductions", 0)
 # set_optimizer_attribute(m, "InfUnbdInfo", 1)
-#set_optimizer_attribute(m, "MIPGap", 0.1) 
+set_optimizer_attribute(m, "MIPGap", 0.002) 
 optimize!(m)
 # @show termination_status(m)
 

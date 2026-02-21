@@ -83,6 +83,7 @@ slackinercia2=JuMP.value.(m.ext[:variables][:slackinercia2])*baseMVA
 slackreserve1=JuMP.value.(m.ext[:variables][:slackreserve1])*baseMVA
 slackreserve2=JuMP.value.(m.ext[:variables][:slackreserve2])*baseMVA
 
+loss_power_g1=
 rocof_plg1=Dict()
 rocof_plg2=Dict()
 rocof_plc1=Dict()
@@ -95,6 +96,16 @@ Deltaf_nadir_plg1=Dict()
 Deltaf_nadir_plg2=Dict()
 Deltaf_nadir_plc1=Dict()
 Deltaf_nadir_plc2=Dict()
+total_rg_1=Dict()
+total_re_1=Dict()
+total_rs_1=Dict()
+total_rhvdc_1=Dict()
+total_fast_reserve_1=Dict()
+total_rg_2=Dict()
+total_re_2=Dict()
+total_rs_2=Dict()
+total_rhvdc_2=Dict()
+total_fast_reserve_2=Dict()
 
 t_nadir_plg1=Dict()
 t_nadir_plg2=Dict()
@@ -110,6 +121,16 @@ for t in T
         t_nadir_plg2[t]=plg2[t]*G_dt["2"]/(sum(rg[g,t]*(1-δgvec[g,t]) for g in G2)+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t]*(1-δhvdc[cv,t]) for cv in CV2)+slackreserve2[t])
         t_nadir_plc1[t]=plc1[t]*G_dt["1"]/(sum(rg[g,t]*(1-δgvec[g,t]) for g in G1)+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t]*(1-δhvdc[cv,t]) for cv in CV1)+slackreserve1[t])
         t_nadir_plc2[t]=plc2[t]*G_dt["2"]/(sum(rg[g,t]*(1-δgvec[g,t]) for g in G2)+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t]*(1-δhvdc[cv,t]) for cv in CV2)+slackreserve2[t])
+        total_rg_1[t]=sum(rg[g,t] for g in G1)
+        total_re_1[t]=sum(re[e,t] for e in E1)
+        total_rs_1[t]=sum(rs[s,t] for s in S1)
+        total_rhvdc_1[t]=sum(rhvdc[cv,t] for cv in CV1)
+        total_fast_reserve_1[t]=slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t] for cv in CV1)
+        total_rg_2[t]=sum(rg[g,t] for g in G2)
+        total_re_2[t]=sum(re[e,t] for e in E2)
+        total_rs_2[t]=sum(rs[s,t] for s in S2)
+        total_rhvdc_2[t]=sum(rhvdc[cv,t] for cv in CV2)
+        total_fast_reserve_2[t]=slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)
 end
 
 Inertia_nadir_frequency_1_vec = [Inertia_nadir_frequency_1[t] for t in T]
@@ -236,6 +257,80 @@ open(output_file, "w") do io
     for t in T
         println(io, "t=$t  value=$(Deltaf_nadir_plc2[t])")
     end
+
+    println(io, "===== TOTAL RESERVES =====")
+    println(io, "total_rg_1:")
+    for t in T
+        println(io, "t=$t  value=$(total_rg_1[t])")
+    end
+    println(io)
+
+    println(io, "total_re_1:")
+    for t in T
+        println(io, "t=$t  value=$(total_re_1[t])")
+    end
+    println(io)
+
+    println(io, "total_rs_1:")
+    for t in T
+        println(io, "t=$t  value=$(total_rs_1[t])")
+    end
+    println(io)
+
+    println(io, "total_rhvdc_1:")
+    for t in T
+        println(io, "t=$t  value=$(total_rhvdc_1[t])")
+    end
+    println(io)
+
+    println(io, "total_fast_reserve_1:")
+    for t in T
+        println(io, "t=$t  value=$(total_fast_reserve_1[t])")
+    end
+    println(io)
+
+    println(io, "total_rg_2:")
+    for t in T
+        println(io, "t=$t  value=$(total_rg_2[t])")
+    end
+    println(io)
+
+    println(io, "total_re_2:")
+    for t in T
+        println(io, "t=$t  value=$(total_re_2[t])")
+    end
+    println(io)
+
+     println(io, "total_rs_2:")
+     for t in T
+         println(io, "t=$t  value=$(total_rs_2[t])")
+     end
+     println(io)
+
+     println(io, "total_rhvdc_2:")
+     for t in T
+         println(io, "t=$t  value=$(total_rhvdc_2[t])")
+     end
+     println(io)
+
+     println(io, "total_fast_reserve_2:")
+     for t in T
+         println(io, "t=$t  value=$(total_fast_reserve_2[t])")
+     end
+
+     println(io, "===== LOSS OF POWER =====")
+     println(io, "loss_power_g1:")
+     for t in T
+         println(io, "t=$t  value=$(plg1[t])")
+     end
+     println(io)
+
+     println(io, "loss_power_g2:")
+     for t in T
+         println(io, "t=$t  value=$(plg2[t])")
+     end
+     println(io)
+
 end
 
 println("Results written to frequency_results.txt")
