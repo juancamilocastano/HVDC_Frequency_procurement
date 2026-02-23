@@ -166,11 +166,11 @@ open(output_file, "w") do io
     end
     println(io)
 
-    println(io, "slackinercia2:")
+    #= println(io, "slackinercia2:")
     for t in T
         println(io, "t=$t  value=$(slackinercia2[t])")
     end
-    println(io)
+    println(io) =#
 
     println(io, "slackreserve1:")
     for t in T
@@ -178,11 +178,11 @@ open(output_file, "w") do io
     end
     println(io)
 
-    println(io, "slackreserve2:")
+    #= println(io, "slackreserve2:")
     for t in T
         println(io, "t=$t  value=$(slackreserve2[t])")
     end
-    println(io)
+    println(io) =#
 
     println(io, "===== ROCOF =====")
     println(io, "rocof_plg1:")
@@ -191,11 +191,11 @@ open(output_file, "w") do io
     end
     println(io)
 
-    println(io, "rocof_plg2:")
+  #=   println(io, "rocof_plg2:")
     for t in T
         println(io, "t=$t  value=$(rocof_plg2[t])")
     end
-    println(io)
+    println(io) =#
 
     println(io, "rocof_plc1:")
     for t in T
@@ -203,11 +203,11 @@ open(output_file, "w") do io
     end
     println(io)
 
-    println(io, "rocof_plc2:")
+  #=   println(io, "rocof_plc2:")
     for t in T
         println(io, "t=$t  value=$(rocof_plc2[t])")
     end
-    println(io)
+    println(io) =#
 
     println(io, "===== INERTIA =====")
     println(io, "Inertia_nadir_frequency_1:")
@@ -216,11 +216,11 @@ open(output_file, "w") do io
     end
     println(io)
 
-    println(io, "Inertia_nadir_frequency_2:")
+    #= println(io, "Inertia_nadir_frequency_2:")
     for t in T
         println(io, "t=$t  value=$(Inertia_nadir_frequency_2[t])")
     end
-    println(io)
+    println(io) =#
 
     println(io, "procured_inertia_1:")
     for t in T
@@ -228,11 +228,11 @@ open(output_file, "w") do io
     end
     println(io)
 
-    println(io, "procured_inertia_2:")
+   #=  println(io, "procured_inertia_2:")
     for t in T
         println(io, "t=$t  value=$(procured_inertia_2[t])")
     end
-    println(io)
+    println(io) =#
 
     println(io, "===== NADIR FREQUENCY DEVIATION =====")
     println(io, "Deltaf_nadir_plg1:")
@@ -241,11 +241,11 @@ open(output_file, "w") do io
     end
     println(io)
 
-    println(io, "Deltaf_nadir_plg2:")
+   #=  println(io, "Deltaf_nadir_plg2:")
     for t in T
         println(io, "t=$t  value=$(Deltaf_nadir_plg2[t])")
     end
-    println(io)
+    println(io) =#
 
     println(io, "Deltaf_nadir_plc1:")
     for t in T
@@ -253,10 +253,10 @@ open(output_file, "w") do io
     end
     println(io)
 
-    println(io, "Deltaf_nadir_plc2:")
+   #=  println(io, "Deltaf_nadir_plc2:")
     for t in T
         println(io, "t=$t  value=$(Deltaf_nadir_plc2[t])")
-    end
+    end =#
 
     println(io, "===== TOTAL RESERVES =====")
     println(io, "total_rg_1:")
@@ -288,7 +288,7 @@ open(output_file, "w") do io
         println(io, "t=$t  value=$(total_fast_reserve_1[t])")
     end
     println(io)
-
+#= 
     println(io, "total_rg_2:")
     for t in T
         println(io, "t=$t  value=$(total_rg_2[t])")
@@ -317,7 +317,7 @@ open(output_file, "w") do io
      for t in T
          println(io, "t=$t  value=$(total_fast_reserve_2[t])")
      end
-
+ =#
      println(io, "===== LOSS OF POWER =====")
      println(io, "loss_power_g1:")
      for t in T
@@ -325,11 +325,11 @@ open(output_file, "w") do io
      end
      println(io)
 
-     println(io, "loss_power_g2:")
+ #=     println(io, "loss_power_g2:")
      for t in T
          println(io, "t=$t  value=$(plg2[t])")
      end
-     println(io)
+     println(io) =#
 
 end
 
