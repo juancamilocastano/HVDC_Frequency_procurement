@@ -228,7 +228,7 @@ function build_ac_opf_acdc_frequency_silent_4!(m::Model)
     # DC components
     
     # Branches
-    brdc_p = m.ext[:variables][:brdc_p] = @variable(m, [(d,e,f)=BD_dc, t=T], lower_bound=-brdc_rate_a[d], upper_bound=brdc_rate_a[d], base_name="brdc_p")
+    brdc_p = m.ext[:variables][:brdc_p] = @variable(m, [(d,e,f)=BD_dc, t=T], lower_bound=-0*brdc_rate_a[d], upper_bound=0*brdc_rate_a[d], base_name="brdc_p")
     δbranch= m.ext[:variables][:δbranch] = @variable(m, [cv=CV,t=T], binary=true, base_name="δbranch") #binary variable event converter
    # Converters
     conv_p_ac = m.ext[:variables][:conv_p_ac] = @variable(m, [cv=CV,t=T], lower_bound=-conv_p_ac_max[cv], upper_bound=conv_p_ac_max[cv], base_name="conv_p_ac") # converter active power
@@ -263,10 +263,10 @@ function build_ac_opf_acdc_frequency_silent_4!(m::Model)
     plc2= m.ext[:variables][:plc2] = @variable(m, [t=T], lower_bound=0, base_name="plc2") # loss of power converters area 2
     plf1= m.ext[:variables][:plf1] = @variable(m, [t=T], lower_bound=0, base_name="plf1") # frequency provision as a loss of generation area 1
     plf2= m.ext[:variables][:plf2] = @variable(m, [t=T], lower_bound=0, base_name="plf2") # frequency provision as a loss of generation area 2
-    slackinercia1= m.ext[:variables][:slackinercia1] = @variable(m, [t=T], lower_bound=0,  base_name="slackinercia1") # slack inertia area 1
-    slackinercia2= m.ext[:variables][:slackinercia2] = @variable(m, [t=T], lower_bound=0, base_name="slackinercia2") # slack inertia area 2
-    slackreserve1= m.ext[:variables][:slackreserve1] = @variable(m, [t=T], lower_bound=0, base_name="slackreserve1") # slack reserve area 1
-    slackreserve2= m.ext[:variables][:slackreserve2] = @variable(m, [t=T], lower_bound=0, base_name="slackreserve2") # slack reserve area 2
+    slackinercia1= m.ext[:variables][:slackinercia1] = @variable(m, [t=T], lower_bound=0, upper_bound=0, base_name="slackinercia1") # slack inertia area 1
+    slackinercia2= m.ext[:variables][:slackinercia2] = @variable(m, [t=T], lower_bound=0,upper_bound=0, base_name="slackinercia2") # slack inertia area 2
+    slackreserve1= m.ext[:variables][:slackreserve1] = @variable(m, [t=T], lower_bound=0,upper_bound=0, base_name="slackreserve1") # slack reserve area 1
+    slackreserve2= m.ext[:variables][:slackreserve2] = @variable(m, [t=T], lower_bound=0,upper_bound=0, base_name="slackreserve2") # slack reserve area 2
 
     #Auxiliary variables for rotated second order cone constraints
     ypg1 = m.ext[:variables][:ypg1] = @variable(m, [t=T],lower_bound=0, base_name="ypg1") #Auxiliary variable rotate second order cone generators fault area 1
@@ -285,6 +285,7 @@ function build_ac_opf_acdc_frequency_silent_4!(m::Model)
     zpf2 = m.ext[:variables][:zpf2] = @variable(m, [t=T],lower_bound=0, base_name="zpf2") #Auxiliary variable rotate second order cone frequency provision as a loss of generation area 2
     # Other variables
     rcu=m.ext[:variables][:rcu]=@variable(m,[n=N,t=T],lower_bound=0, upper_bound=wind[n][t], base_name="rcu") #Renewable curtailment
+    loadshed=m.ext[:variables][:loadshed]=@variable(m,[n=N,t=T],lower_bound=0, upper_bound=demand[n][t], base_name="loadshed") #Load shedding
 
     #frequency provision auxiliary variables
     zf1aux= m.ext[:variables][:zf1aux] = @variable(m, [t=T], binary=true, base_name="zf1aux") #Binary variable for minimum bound frequency provision as a loss of generation area 1
@@ -312,6 +313,7 @@ function build_ac_opf_acdc_frequency_silent_4!(m::Model)
                             +sum(G_reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
                             +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1+slackreserve2 for t in T)*baseMVA*0
                             +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
+                            +sum(loadshed[n,t]*demand[n][t]*baseMVA for n in N, t in T) * baseMVA*1000
 
         )
     elseif max_gen_ncost == 2
@@ -366,7 +368,7 @@ function build_ac_opf_acdc_frequency_silent_4!(m::Model)
 
     #Nodal power balance constraint AC
         m.ext[:constraints][:power_balance] = @constraint(m, [n=N,t=T],
-        sum(pg[g,t] for g in G if gen_bus[g] == n) +wind[n][t]-rcu[n,t]+sum(psd[s,t] for s in S if storage_bus[s] == n)-sum(psc[s,t] for s in S if storage_bus[s] == n)  - sum(pb[(br,i,j),t] for (br,i,j) in B_arcs[n])- sum(conv_p_ac[cv,t] for cv in CV if conv_bus[cv] == n) -sum(pe[e,t] for e in E if electrolyzer_bus[e] == n ) -sum(pe_compressor[e,t] for e in E if electrolyzer_bus[e] == n )-demand[n][t]== 0
+        sum(pg[g,t] for g in G if gen_bus[g] == n) +wind[n][t]-rcu[n,t]+sum(psd[s,t] for s in S if storage_bus[s] == n)-sum(psc[s,t] for s in S if storage_bus[s] == n)  - sum(pb[(br,i,j),t] for (br,i,j) in B_arcs[n])- sum(conv_p_ac[cv,t] for cv in CV if conv_bus[cv] == n) -sum(pe[e,t] for e in E if electrolyzer_bus[e] == n ) -sum(pe_compressor[e,t] for e in E if electrolyzer_bus[e] == n )-demand[n][t]+loadshed[n,t]== 0
         )
 
 
@@ -860,13 +862,13 @@ function build_ac_opf_acdc_frequency_silent_4!(m::Model)
 
     #Absolute value constraints
   
-    m.ext[:constraints][:direccional_flow_dc_abs_1] = @constraint(m, [(d,f,e) = BD_dc,t=T],
+     m.ext[:constraints][:direccional_flow_dc_abs_1] = @constraint(m, [(d,f,e) = BD_dc,t=T],
     flow_hvdc_abs[(d,f,e),t] >=  brdc_p[(d, e, f),t]
     )
 
      m.ext[:constraints][:direccional_flow_dc_abs_2] = @constraint(m, [(d,f,e) = BD_dc,t=T],
     flow_hvdc_abs[(d,f,e),t] >=  -brdc_p[(d, e, f),t]
-    )
+    ) 
 
     #Frequency stability constraints for HVDC power balance provision seen as a loss of generation.
     
