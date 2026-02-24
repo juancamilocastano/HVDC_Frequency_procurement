@@ -232,9 +232,9 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
    # Converters
     conv_p_ac = m.ext[:variables][:conv_p_ac] = @variable(m, [cv=CV,t=T], lower_bound=-conv_p_ac_max[cv], upper_bound=conv_p_ac_max[cv], base_name="conv_p_ac") # converter active power
     conv_p_dc = m.ext[:variables][:conv_p_dc] = @variable(m, [cv=CV,t=T], lower_bound=-conv_p_dc_max[cv], upper_bound=conv_p_dc_max[cv], base_name="conv_p_dc") # converter active power
-    rhvdc = m.ext[:variables][:rhvdc] = @variable(m, [cv=CV,t=T], lower_bound=0,  upper_bound=2*conv_p_dc_max[cv], base_name="rhvdc") #Reserve converter
+    rhvdc = m.ext[:variables][:rhvdc] = @variable(m, [cv=CV,t=T], lower_bound=0,  upper_bound=0*conv_p_dc_max[cv], base_name="rhvdc") #Reserve converter
     δhvdc= m.ext[:variables][:δhvdc] = @variable(m, [cv=CV,t=T], binary=true, base_name="δhvdc") #binary variable event converter
-    
+    slackhvdc= m.ext[:variables][:slackhvdc] = @variable(m, [nd=ND,t=T],lower_bound=0,upper_bound=conv_p_dc_max[nd]*0, base_name="slackhvdc") #slack variable converter reserve
     # Electrolyzer variables
     pe= m.ext[:variables][:pe] = @variable(m, [e=E,t=T], lower_bound=0, upper_bound=Epmax[e], base_name="pe") # Electrolyzer power consumption
     pe_compressor= m.ext[:variables][:pe_compressor] = @variable(m, [e=E,t=T], lower_bound=0, base_name="pe_compressor") # Electrolyzer power consumption for compressor
@@ -285,7 +285,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     #Second stage variables
     
     keys_contingency = collect(keys(all_contingencies))
-    # Generator response contingency
+    #= # Generator response contingency
     rg_pos = m.ext[:variables][:rgc_pos] = @variable(m, [g=G,t=T, c=keys_contingency],lower_bound=0, base_name = "rg_pos") # frequency reserve generators in contingency
     #converter response contingency
     rhvdc_pos = m.ext[:variables][:rhvdc_pos] = @variable(m, [cv=CV,t=T, c=keys_contingency],lower_bound=0,  base_name = "rhvdc_pos") # frequency reserve hvdc in contingency  
@@ -317,7 +317,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     ypc2_pos = m.ext[:variables][:ypc2_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="ypc2_pos") #Auxiliary variable rotate second order cone converters fault area 2
     zpc2_pos = m.ext[:variables][:zpc2_pos] = @variable(m, [t=T,c=keys_contingency],lower_bound=0, base_name="zpc2_pos") #Auxiliary variable rotate second order cone converters fault area 2
 
-
+ =#
     
 
     ##### Objective
@@ -431,7 +431,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
     # Nodal power balance DC  taken from https://github.com/Electa-Git/OPES/blob/main/opf_acdc/build_ac_opf_acdc_tap.jl line 431
     m.ext[:constraints][:nodal_p_dc_balance] = @constraint(m, [nd=ND,t=T],
-        -sum(conv_p_dc[cv,t] for cv in CV if conv_busdc[cv] == nd)- sum(brdc_p[(d,f,e),t] for (d,f,e) in ND_arcs[nd])==0
+        -slackhvdc[nd,t]-sum(conv_p_dc[cv,t] for cv in CV if conv_busdc[cv] == nd)- sum(brdc_p[(d,f,e),t] for (d,f,e) in ND_arcs[nd])==0
          
          )#3.14
 
@@ -633,13 +633,13 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     sum(δg[g,t] for g in G2) ==1
     )
 
-    m.ext[:constraints][:single_event_converter_1]= @constraint(m, [t=T],
+#=      m.ext[:constraints][:single_event_converter_1]= @constraint(m, [t=T],
     sum(δhvdc[cv,t] for cv in CV1) ==1
     )
     m.ext[:constraints][:single_event_converter_2]= @constraint(m, [t=T],
     sum(δhvdc[cv,t] for cv in CV2) ==1
-    )
-
+    ) 
+ =#
     event_generator_1 = "1"  # MUST be a String to match δg's first index set
     event_generator_2 = "5"  # MUST be a String to match δg's first index set
     event_converter_1 = "1"   # MUST be a String to match δhvdc's first index set
@@ -817,31 +817,31 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
     #Constraint time occurrence nadir
     m.ext[:constraints][:time_nadir_occurrence_g1_1]= @constraint(m, [t in T],
-    plg1[t]<= 0.00001+slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t] for cv in CV1)+sum(rg[g,t] for g in G1)
+    plg1[t]<= 0.0000001+slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t] for cv in CV1)+sum(rg[g,t] for g in G1)
     )
     m.ext[:constraints][:time_nadir_occurrence_g1_2]= @constraint(m, [t in T],
-    plg1[t]>=0.00001+slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t] for cv in CV1)+sum(rg[g,t] for g in G1)*Edeployment["1"]/G_dt["1"]
+    plg1[t]>=0.0000001+slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t] for cv in CV1)+sum(rg[g,t] for g in G1)*Edeployment["1"]/G_dt["1"]
     )
 
     m.ext[:constraints][:time_nadir_occurrence_c1_1]= @constraint(m, [t in T],
-    plc1[t]<= 0.00001+slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t] for cv in CV1)+sum(rg[g,t] for g in G1)
+    plc1[t]<= 0.0000001+slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t] for cv in CV1)+sum(rg[g,t] for g in G1)
     )
     m.ext[:constraints][:time_nadir_occurrence_c1_2]= @constraint(m, [t in T],
-    plc1[t]>=0.00001+slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t] for cv in CV1)+sum(rg[g,t] for g in G1)*Edeployment["1"]/G_dt["1"]
+    plc1[t]>=0.0000001+slackreserve1[t]+sum(re[e,t] for e in E1)+sum(rs[s,t] for s in S1)+sum(rhvdc[cv,t] for cv in CV1)+sum(rg[g,t] for g in G1)*Edeployment["1"]/G_dt["1"]
     )
 
     m.ext[:constraints][:time_nadir_occurrence_g2_1]= @constraint(m, [t in T],
-    plg2[t]<= 0.00001+slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)+sum(rg[g,t] for g in G2)
+    plg2[t]<= 0.0000001+slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)+sum(rg[g,t] for g in G2)
     )
     m.ext[:constraints][:time_nadir_occurrence_g2_2]= @constraint(m, [t in T],
-    plg2[t]>=0.00001+slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)+sum(rg[g,t] for g in G2)*Edeployment["1"]/G_dt["1"]
+    plg2[t]>=0.0000001+slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)+sum(rg[g,t] for g in G2)*Edeployment["1"]/G_dt["1"]
     )
 
     m.ext[:constraints][:time_nadir_occurrence_c2_1]= @constraint(m, [t in T],
-    plc2[t]<= 0.00001+slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)+sum(rg[g,t] for g in G2)
+    plc2[t]<= 0.0000001+slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)+sum(rg[g,t] for g in G2)
     )
     m.ext[:constraints][:time_nadir_occurrence_c2_2]= @constraint(m, [t in T],
-    plc2[t]>=0.00001+slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)+sum(rg[g,t] for g in G2)*Edeployment["1"]/G_dt["1"]
+    plc2[t]>=0.0000001+slackreserve2[t]+sum(re[e,t] for e in E2)+sum(rs[s,t] for s in S2)+sum(rhvdc[cv,t] for cv in CV2)+sum(rg[g,t] for g in G2)*Edeployment["1"]/G_dt["1"]
     )
 
     #Absolute value constraints
@@ -858,9 +858,9 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
 
 
-          # Nodal power balance DC post contigency
+ #=          # Nodal power balance DC post contigency
     m.ext[:constraints][:nodal_p_dc_balance_pos] = @constraint(m, [nd=ND,t=T,c=keys_contingency],
-        -sum(conv_p_dc_pos[cv,t,c] for cv in CV if conv_busdc[cv] == nd)- sum(brdc_p_pos[(d,f,e),t,c] for (d,f,e) in ND_arcs[nd])==0
+        -slackhvdc[nd,t]-sum(conv_p_dc_pos[cv,t,c] for cv in CV if conv_busdc[cv] == nd)- sum(brdc_p_pos[(d,f,e),t,c] for (d,f,e) in ND_arcs[nd])==0
          
          )
 
@@ -886,7 +886,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
     m.ext[:constraints][:max_fre_deliverable]= @constraint(m, [g=G,t=T,c=keys_contingency],
     rg_pos[g,t,c] <= 0.2*pmax[g]*zg[g,t]# replacement of 3.37 
-    )
+    ) =#
 
 
             #Reserve constraints
