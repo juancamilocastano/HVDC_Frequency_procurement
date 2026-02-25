@@ -1,4 +1,4 @@
-function build_ac_opf_acdc_frequency_silent_3!(m::Model)
+function build_ac_opf_acdc_frequency_silent_several_res_var!(m::Model)
     # This function builds the polar form of a nonlinear AC power flow formulation
 
     # Create m.ext entries "variables", "expressions" and "constraints"
@@ -211,7 +211,10 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
     # Generator variables
     pg = m.ext[:variables][:pg] = @variable(m, [g=G,t=T], base_name = "pg") # active power generation
-    rg = m.ext[:variables][:rg] = @variable(m, [g=G,t=T],lower_bound=0, base_name = "rg") # frequency reserve generators
+    rg_lg1 = m.ext[:variables][:rg_lg1] = @variable(m, [g=G1,t=T],lower_bound=0, base_name = "rg_lg1") # frequency reserve generators loss of generation area 1
+    rg_lc1 = m.ext[:variables][:rg_lc1] = @variable(m, [g=G1,t=T],lower_bound=0, base_name = "rg_lc1") # frequency reserve generators loss of converter area 1
+    rg_lg2 = m.ext[:variables][:rg_lg2] = @variable(m, [g=G2,t=T],lower_bound=0, base_name = "rg_lg2") # frequency reserve generators loss of generation area 2
+    rg_lc2 = m.ext[:variables][:rg_lc2] = @variable(m, [g=G2,t=T],lower_bound=0, base_name = "rg_lc2") # frequency reserve generators loss of converter area 2
 
     # Branch variables
     pb = m.ext[:variables][:pb] = @variable(m, [(b,i,j) in B_ac,t=T],lower_bound = -pmaxbranch[b], upper_bound = pmaxbranch[b], base_name = "pb") # from side active power flow (i->j)
@@ -232,9 +235,14 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
    # Converters
     conv_p_ac = m.ext[:variables][:conv_p_ac] = @variable(m, [cv=CV,t=T], lower_bound=-conv_p_ac_max[cv], upper_bound=conv_p_ac_max[cv], base_name="conv_p_ac") # converter active power
     conv_p_dc = m.ext[:variables][:conv_p_dc] = @variable(m, [cv=CV,t=T], lower_bound=-conv_p_dc_max[cv], upper_bound=conv_p_dc_max[cv], base_name="conv_p_dc") # converter active power
-    rhvdc = m.ext[:variables][:rhvdc] = @variable(m, [cv=CV,t=T], lower_bound=0,  upper_bound=0*conv_p_dc_max[cv], base_name="rhvdc") #Reserve converter
     δhvdc= m.ext[:variables][:δhvdc] = @variable(m, [cv=CV,t=T], binary=true, base_name="δhvdc") #binary variable event converter
+    rhvdc_lg1 = m.ext[:variables][:rhvdc_lg1] = @variable(m, [cv=CV1,t=T], lower_bound=0,  upper_bound=2*conv_p_dc_max[cv], base_name="rhvdc_lg1") #frequency reserve HHDC loss of generation area 1
+    rhvdc_lc1 = m.ext[:variables][:rhvdc_lc1] = @variable(m, [cv=CV1,t=T], lower_bound=0,  upper_bound=2*conv_p_dc_max[cv], base_name="rhvdc_lc1") #frequency reserve HVDC loss of converter area 1
+    rhvdc_lg2 = m.ext[:variables][:rhvdc_lg2] = @variable(m, [cv=CV2,t=T], lower_bound=0,  upper_bound=2*conv_p_dc_max[cv], base_name="rhvdc_lg2") #frequency reserve HVDC loss of generation area 2
+    rhvdc_lc2 = m.ext[:variables][:rhvdc_lc2] = @variable(m, [cv=CV2,t=T], lower_bound=0,  upper_bound=2*conv_p_dc_max[cv], base_name="rhvdc_lc2") #frequency reserve HVDC loss of converter area 2
+
     slackhvdc= m.ext[:variables][:slackhvdc] = @variable(m, [nd=ND,t=T],lower_bound=0,upper_bound=conv_p_dc_max[nd]*0, base_name="slackhvdc") #slack variable converter reserve
+
     # Electrolyzer variables
     pe= m.ext[:variables][:pe] = @variable(m, [e=E,t=T], lower_bound=0, upper_bound=Epmax[e], base_name="pe") # Electrolyzer power consumption
     pe_compressor= m.ext[:variables][:pe_compressor] = @variable(m, [e=E,t=T], lower_bound=0, base_name="pe_compressor") # Electrolyzer power consumption for compressor
@@ -246,15 +254,21 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     ze= m.ext[:variables][:ze] = @variable(m, [e=E,t=T], binary=true, base_name="ze") # Electrolyzer status
     zesu= m.ext[:variables][:zesu] =@variable(m, [e=E,t=T], binary=true, base_name="zesu") #Electrolyzer start up 
     zestb= m.ext[:variables][:zestb] = @variable(m, [e=E,t=T], binary=true, base_name="zestb") #Electrolyzer stanby indicator
-    re=  m.ext[:variables][:re] = @variable(m, [e=E,t=T], lower_bound=0, base_name="re") #frequency reserve batteries
+    re_lg1=  m.ext[:variables][:re_lg1] = @variable(m, [e=E1,t=T], lower_bound=0, base_name="re_lg1") #frequency reserve electrolyzers loss of generation area 1
+    re_lc1=  m.ext[:variables][:re_lc1] = @variable(m, [e=E1,t=T], lower_bound=0, base_name="re_lc1") #frequency reserve electrolyzers loss of converter area 1
+    re_lg2=  m.ext[:variables][:re_lg2] = @variable(m, [e=E2,t=T], lower_bound=0, base_name="re_lg2") #frequency reserve electrolyzer loss of generation area 2
+    re_lc2=  m.ext[:variables][:re_lc2] = @variable(m, [e=E2,t=T], lower_bound=0, base_name="re_lc2") #frequency reserve electrolyzer loss of converter area 2
 
     # Storage variables
     psc = m.ext[:variables][:psc] = @variable(m, [s=S,t=T],lower_bound=0, base_name="psc") #Charging power of the batteries
     psd = m.ext[:variables][:psd] = @variable(m, [s=S,t=T],lower_bound=0, base_name="psd") #Discharging power of the batteries
     es = m.ext[:variables][:es] = @variable(m, [s=S,t=T], lower_bound= Sstoragemax[s]*(1-Sdod[s]), upper_bound=Sstoragemax[s] , base_name="es") #Energy bounds of the batteries
     zs = m.ext[:variables][:zs] = @variable(m, [s=S,t=T], binary=true, base_name="zb") #standby indicator of the batteries
-    rs=  m.ext[:variables][:rs] = @variable(m, [s=S,t=T], lower_bound=0, base_name="rs") #frequency reserve batteries
-
+    rs_lg1=  m.ext[:variables][:rs_lg1] = @variable(m, [s=S1,t=T], lower_bound=0, base_name="rs_lg1") #frequency reserve batteries loss of generation area 1
+    rs_lg2=  m.ext[:variables][:rs_lg2] = @variable(m, [s=S2,t=T], lower_bound=0, base_name="rs_lg2") #frequency reserve batteries loss of generation area 2
+    rs_lc1=  m.ext[:variables][:rs_lc1] = @variable(m, [s=S1,t=T], lower_bound=0, base_name="rs_lc1") #frequency reserve batteries loss of converter area 1
+    rs_lc2=  m.ext[:variables][:rs_lc2] = @variable(m, [s=S2,t=T], lower_bound=0, base_name="rs_lc2") #frequency reserve batteries loss of converter area 2
+   
     # Frequency stability variables
     plg1= m.ext[:variables][:plg1] = @variable(m, [t=T], lower_bound=0, base_name="plg1") # loss of power generators area 1
     plg2= m.ext[:variables][:plg2] = @variable(m, [t=T], lower_bound=0, base_name="plg2") # loss of power generators area 2
@@ -327,11 +341,23 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
                 sum(gen_cost[g][1]
                         for g in G)
                             +sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Ereservecost[e]*re[e,t] for e in E, t in T)*baseMVA
-                            +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
-                            +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
-                            +sum(G_reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
-                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1+slackreserve2 for t in T)*baseMVA*0
+                            +sum(Ereservecost[e]*re_lg1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg2[cv,t] for cv in CV2, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc2[cv,t] for cv in CV2, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lg1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lg2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lc1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*0
                             +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
 
         )
@@ -340,10 +366,22 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
             sum(gen_cost[g][1] * pg[g, t] + gen_cost[g][2] 
                     for g in G, t in T)
                         +sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Ereservecost[e]*re[e,t] for e in E, t in T)*baseMVA
-                            +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
-                            +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
-                            +sum(G_reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg2[cv,t] for cv in CV2, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc2[cv,t] for cv in CV2, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lg1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lg2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lc1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
                             +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*0
                             +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
         )
@@ -352,10 +390,22 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
                 sum(gen_cost[g][1]*pg[g,t]^2 + gen_cost[g][2]*pg[g,t] + gen_cost[g][3]
                         for g in G, t in T)
                             +sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Ereservecost[e]*re[e,t] for e in E, t in T)*baseMVA
-                            +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
-                            +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
-                            +sum(G_Reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg2[cv,t] for cv in CV2, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc2[cv,t] for cv in CV2, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lg1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lg2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lc1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
                             +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*0
                             +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
         )   
@@ -363,11 +413,22 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
         m.ext[:objective] = @NLobjective(m, Min,
                 sum(gen_cost[g][1]*pg[g,t]^3 + gen_cost[g][2]*pg[g,t]^2 + gen_cost[g][3]*pg[g,t] + gen_cost[g][4]
                         for g in G, t in T)+sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Ereservecost[e]*re[e,t] for e in E, t in T)*baseMVA
-                            +sum(Sreservecost[s]*rs[s,t] for s in S, t in T)*baseMVA
-                            +sum(HVDC_reservecost[cv]*rhvdc[cv,t] for cv in CV, t in T)*baseMVA
-                            +sum(G_Reservecost[g]*rg[g,t] for g in G, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg2[cv,t] for cv in CV2, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc2[cv,t] for cv in CV2, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lg1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lg2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lc1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_Reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
                             +sum(slackinercia2[t]+slackinercia1[t]+slackreserve1[t]+slackreserve2[t] for t in T)*baseMVA*0
                             +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
         )
@@ -633,13 +694,13 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     sum(δg[g,t] for g in G2) ==1
     )
 
-#=      m.ext[:constraints][:single_event_converter_1]= @constraint(m, [t=T],
+      m.ext[:constraints][:single_event_converter_1]= @constraint(m, [t=T],
     sum(δhvdc[cv,t] for cv in CV1) ==1
     )
     m.ext[:constraints][:single_event_converter_2]= @constraint(m, [t=T],
     sum(δhvdc[cv,t] for cv in CV2) ==1
     ) 
- =#
+ 
     event_generator_1 = "1"  # MUST be a String to match δg's first index set
     event_generator_2 = "5"  # MUST be a String to match δg's first index set
     event_converter_1 = "1"   # MUST be a String to match δhvdc's first index set
@@ -705,16 +766,27 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     # Inertia value per area after the event
     Inertia_nadir_frequency_1=Dict()
     Inertia_nadir_frequency_2=Dict()
+    Inertia_nadir_frequency_converter_1=Dict()
+    Inertia_nadir_frequency_converter_2=Dict()
     for t in T 
         Inertia_nadir_frequency_1[t]=sum((zg[g,t]-δg[g,t])*ic[g]*pmax[g] for g in G1)
         Inertia_nadir_frequency_2[t]=sum((zg[g,t]-δg[g,t])*ic[g]*pmax[g] for g in G2)
+        Inertia_nadir_frequency_converter_1[t]=sum(zg[g,t]*ic[g]*pmax[g] for g in G1)
+        Inertia_nadir_frequency_converter_2[t]=sum(zg[g,t]*ic[g]*pmax[g] for g in G2)
     end
     
 
   #bounding the FFR and FCR contributions of all generator andconverter assets
-  m.ext[:constraints][:fcr_bound_gen]= @constraint(m, [g in G, t in T],
-     rg[g,t]<=(1-δg[g,t])*pmax[g]
-    )   
+  m.ext[:constraints][:fcr_bound_gen_lg1]= @constraint(m, [g in G1, t in T],
+     rg_lg1[g,t]<=(1-δg[g,t])*pmax[g]
+    )
+    m.ext[:constraints][:fcr_bound_gen_lg1]= @constraint(m, [g in G1, t in T],
+     rg_l1[g,t]<=(1-δg[g,t])*pmax[g]
+    )
+    
+    m.ext[:constraints][:fcr_bound_gen_lg2]= @constraint(m, [g in G2, t in T],
+     rg_lg2[g,t]<=(1-δg[g,t])*pmax[g]
+    )
     m.ext[:constraints][:fcr_bound_conv]= @constraint(m, [cv in CV, t in T],
          rhvdc[cv,t]<=(1-δhvdc[cv,t])*conv_p_dc_max[cv]
      )
@@ -775,7 +847,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
 
 
     m.ext[:constraints][:nadir_frequency_g_1_constraint_3] = @constraint(m,[t in T],
-    [ypg1[t]; zpg1[t]; plg1[t]-sum(re[e,t] for e in E1)-sum(rs[s,t] for s in S1)-sum(rhvdc[cv,t] for cv in CV1)-slackreserve1[t]] in RotatedSecondOrderCone()
+    [ypc1[t]; zpc1[t]; plg1[t]-sum(re[e,t] for e in E1)-sum(rs[s,t] for s in S1)-sum(rhvdc[cv,t] for cv in CV1)-slackreserve1[t]] in RotatedSecondOrderCone()
     )
 
     m.ext[:constraints][:nadir_frequency_c_1_constraint_1]= @constraint(m, [t in T],
@@ -787,7 +859,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     )
 
     m.ext[:constraints][:nadir_frequency_c_1_constraint_3] = @constraint(m,[t in T],
-    [ypc1[t]; zpc1[t]; plc1[t]-sum(re[e,t] for e in E1)-sum(rs[s,t] for s in S1)-sum(rhvdc[cv,t] for cv in CV1)-slackreserve1[t]] in RotatedSecondOrderCone()
+    [ypg1[t]; zpg1[t]; plc1[t]-sum(re[e,t] for e in E1)-sum(rs[s,t] for s in S1)-sum(rhvdc[cv,t] for cv in CV1)-slackreserve1[t]] in RotatedSecondOrderCone()
     )
 
     #Constraint frequency nadir generators and converters area 2
@@ -801,7 +873,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     )
 
     m.ext[:constraints][:nadir_frequency_g_2_constraint_3] = @constraint(m,[t in T],
-    [ypg2[t]; zpg2[t]; plg2[t]-sum(re[e,t] for e in E2)-sum(rs[s,t] for s in S2)-sum(rhvdc[cv,t] for cv in CV2)-slackreserve2[t]] in RotatedSecondOrderCone()
+    [ypc2[t]; zpc2[t]; plg2[t]-sum(re[e,t] for e in E2)-sum(rs[s,t] for s in S2)-sum(rhvdc[cv,t] for cv in CV2)-slackreserve2[t]] in RotatedSecondOrderCone()
     )   
 
     m.ext[:constraints][:nadir_frequency_c_2_constraint_1]= @constraint(m, [t in T],
@@ -812,7 +884,7 @@ function build_ac_opf_acdc_frequency_silent_3!(m::Model)
     zpc2[t]==sum(rg[g,t]/G_dt[g] for g in G2)
     )
     m.ext[:constraints][:nadir_frequency_c_2_constraint_3] = @constraint(m,[t in T],
-    [ypc2[t]; zpc2[t]; plc2[t]-sum(re[e,t] for e in E2)-sum(rs[s,t] for s in S2)-sum(rhvdc[cv,t] for cv in CV2)-slackreserve2[t]] in RotatedSecondOrderCone()
+    [ypg2[t]; zpg2[t]; plc2[t]-sum(re[e,t] for e in E2)-sum(rs[s,t] for s in S2)-sum(rhvdc[cv,t] for cv in CV2)-slackreserve2[t]] in RotatedSecondOrderCone()
     )
 
     #Constraint time occurrence nadir
