@@ -448,7 +448,7 @@ function build_ac_opf_acdc_frequency_silent_several_res_var!(m::Model)
 
     #Nodal power balance constraint AC taken from https://github.com/Electa-Git/OPES/blob/main/opf_acdc/build_ac_opf_acdc_tap.jl line 421
         m.ext[:constraints][:power_balance] = @constraint(m, [n=N,t=T],
-        sum(pg[g,t] for g in G if gen_bus[g] == n) +wind[n][t]-rcu[n,t]+sum(psd[s,t] for s in S if storage_bus[s] == n)-sum(psc[s,t] for s in S if storage_bus[s] == n)  - sum(pb[(br,i,j),t] for (br,i,j) in B_arcs[n])- sum(conv_p_ac[cv,t] for cv in CV if conv_bus[cv] == n) -sum(pe[e,t] for e in E if electrolyzer_bus[e] == n ) -sum(pe_compressor[e,t] for e in E if electrolyzer_bus[e] == n )-demand[n][t]== 0 #3.7
+        sum(pg[g,t] for g in G if gen_bus[g] == n)+  sum(conv_p_ac[cv,t] for cv in CV if conv_bus[cv] == n) +wind[n][t]-rcu[n,t]+sum(psd[s,t] for s in S if storage_bus[s] == n)-sum(psc[s,t] for s in S if storage_bus[s] == n)  - sum(pb[(br,i,j),t] for (br,i,j) in B_arcs[n]) -sum(pe[e,t] for e in E if electrolyzer_bus[e] == n ) -sum(pe_compressor[e,t] for e in E if electrolyzer_bus[e] == n )-demand[n][t]== 0 #3.7
         )
 
 
@@ -492,7 +492,7 @@ function build_ac_opf_acdc_frequency_silent_several_res_var!(m::Model)
 
     # Nodal power balance DC  taken from https://github.com/Electa-Git/OPES/blob/main/opf_acdc/build_ac_opf_acdc_tap.jl line 431
     m.ext[:constraints][:nodal_p_dc_balance] = @constraint(m, [nd=ND,t=T],
-        -slackhvdc[nd,t]-sum(conv_p_dc[cv,t] for cv in CV if conv_busdc[cv] == nd)- sum(brdc_p[(d,f,e),t] for (d,f,e) in ND_arcs[nd])==0
+        -slackhvdc[nd,t]+sum(conv_p_dc[cv,t] for cv in CV if conv_busdc[cv] == nd)- sum(brdc_p[(d,f,e),t] for (d,f,e) in ND_arcs[nd])==0
          
          )#3.14
 
@@ -815,34 +815,34 @@ function build_ac_opf_acdc_frequency_silent_several_res_var!(m::Model)
 
     #HVDC headroom reserve constraints
     m.ext[:constraints][:hvdc_headroom_reserve_upper_lg1]= @constraint(m, [cv in CV1, t in T],
-        -conv_p_ac[cv,t]+rhvdc_lg1[cv,t] <= conv_p_ac_max[cv]
+        conv_p_ac[cv,t]+rhvdc_lg1[cv,t] <= conv_p_ac_max[cv]
     )
 
     m.ext[:constraints][:hvdc_headroom_reserve_lower_lg1]= @constraint(m, [cv in CV1, t in T],
-        -conv_p_ac_max[cv]<=-conv_p_ac[cv,t]+rhvdc_lg1[cv,t] 
+        -conv_p_ac_max[cv]<=conv_p_ac[cv,t]+rhvdc_lg1[cv,t] 
     )
 
     m.ext[:constraints][:hvdc_headroom_reserve_upper_lc1]= @constraint(m, [cv in CV1, t in T],
-        -conv_p_ac[cv,t]+rhvdc_lc1[cv,t] <= conv_p_ac_max[cv]
+        conv_p_ac[cv,t]+rhvdc_lc1[cv,t] <= conv_p_ac_max[cv]
     )
 
     m.ext[:constraints][:hvdc_headroom_reserve_lower_lc1]= @constraint(m, [cv in CV1, t in T],
-        -conv_p_ac_max[cv]<=-conv_p_ac[cv,t]+rhvdc_lc1[cv,t] 
+        -conv_p_ac_max[cv]<=conv_p_ac[cv,t]+rhvdc_lc1[cv,t] 
     )
 
     m.ext[:constraints][:hvdc_headroom_reserve_upper_lg2]= @constraint(m, [cv in CV2, t in T],
-        -conv_p_ac[cv,t]+rhvdc_lg2[cv,t] <= conv_p_ac_max[cv]
+        conv_p_ac[cv,t]+rhvdc_lg2[cv,t] <= conv_p_ac_max[cv]
     )
     m.ext[:constraints][:hvdc_headroom_reserve_lower_lg2]= @constraint(m, [cv in CV2, t in T],
-        -conv_p_ac_max[cv]<=-conv_p_ac[cv,t]+rhvdc_lg2[cv,t] 
+        -conv_p_ac_max[cv]<=conv_p_ac[cv,t]+rhvdc_lg2[cv,t] 
     )
 
     m.ext[:constraints][:hvdc_headroom_reserve_upper_lc2]= @constraint(m, [cv in CV2, t in T],
-        -conv_p_ac[cv,t]+rhvdc_lc2[cv,t] <= conv_p_ac_max[cv]
+        conv_p_ac[cv,t]+rhvdc_lc2[cv,t] <= conv_p_ac_max[cv]
     )
 
     m.ext[:constraints][:hvdc_headroom_reserve_lower_lc2]= @constraint(m, [cv in CV2, t in T],
-        -conv_p_ac_max[cv]<=-conv_p_ac[cv,t]+rhvdc_lc2[cv,t] 
+        -conv_p_ac_max[cv]<=conv_p_ac[cv,t]+rhvdc_lc2[cv,t] 
     )
 
         #Reserve storage bound constraints per areas and type of contigency
@@ -994,11 +994,11 @@ function build_ac_opf_acdc_frequency_silent_several_res_var!(m::Model)
     #Absolute value constraints
   
     m.ext[:constraints][:direccional_flow_dc_positive] = @constraint(m, [(d,f,e) = BD_dc,t=T],
-    flow_hvdc_abs[(d,f,e),t] >=  brdc_p[(d, e, f),t]
+    flow_hvdc_abs[(d,f,e),t] >=  brdc_p[(d, f, e),t]
     )
 
      m.ext[:constraints][:direccional_flow_dc_negative] = @constraint(m, [(d,f,e) = BD_dc,t=T],
-    flow_hvdc_abs[(d,f,e),t] >=  -brdc_p[(d, e, f),t]
+    flow_hvdc_abs[(d,f,e),t] >=  -brdc_p[(d, f, e),t]
     )
     
     #post contingency power flow constraint
