@@ -50,17 +50,20 @@ include(joinpath(path,"build_ac_opf_acdc_frequency.jl")) # Define build_ac_opf_a
 include(joinpath(path,"build_ac_opf_acdc_frequency_silent.jl")) # Define build_ac_opf_acdc! function
 include(joinpath(path,"plotfunction_modify.jl")) # plot resutls
 include(joinpath(path,"plotfunction_frequency.jl"))
-include(joinpath(path,"plotfunction_frequency_silent_several_res_var.jl"))
+include(joinpath(path,"plotfunction_frequency_several_res_var_without_loss_res.jl"))
 include(joinpath(path,"printparameters.jl")) # print resutls
 include(joinpath(path,"build_ac_opf_acdc_frequency_silent_3.jl")) # Define build_ac_opf_acdc! function
 include(joinpath(path,"build_ac_opf_acdc_frequency_silent_4.jl")) # Define build_ac_opf_acdc! function
-include(joinpath(path,"build_ac_opf_acdc_frequency_silent_several_res_var.jl")) # Define build_ac_opf_acdc! function
+include(joinpath(path,"build_ac_opf_acdc_frequency_several_res_var_without_loss_res.jl")) # Define build_ac_opf_acdc! function
+include(joinpath(path,"printparameters_frequency_several_res_var_without_loss_res.jl")) # Define build_ac_opf_acdc! function
+include(joinpath(path,"build_ac_opf_acdc_frequency_sev_var_res_provi.jl")) # Define build_ac_opf_acdc! function
 
 #build_ac_opf_acdc_modify!(m) # Pass the model to the build_ac_opf_acdc! function
 #build_ac_opf_acdc_frequency!(m) # Pass the model to the build_ac_opf_acdc! function
 #build_ac_opf_acdc_frequency_silent_3!(m) # Pass the model to the build_ac_opf_acdc! function
 #build_ac_opf_acdc_frequency_silent_4!(m) # Pass the model to the build_ac_opf_acdc! function
-build_ac_opf_acdc_frequency_silent_several_res_var!(m)
+#build_ac_opf_acdc_frequency_several_res_var_without_loss_res!(m)
+build_ac_opf_acdc_frequency_sev_var_res_provi!(m)
 
 ##### Step 4: Solve the model
 
@@ -74,11 +77,11 @@ optimize!(m)
 # compute_conflict!(m)
 
 #plotfunction_modify!(m) # Plot the results
-
+#printparameters_frequency_silent_several_res_var
 #plotfunction_frequency!(m) # Plot the results
 
-plotfunction_frequency_silent_several_res_var!(m) # Plot the results
-#printparameters!(m) # Print the results
+plotfunction_frequency_several_res_var_without_loss_res!(m) # Plot the results
+printparameters_frequency_several_res_var_without_loss_res!(m) # Print the results
 
 
 
