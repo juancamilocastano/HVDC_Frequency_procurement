@@ -208,7 +208,6 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
 
 
     va = m.ext[:variables][:va] = @variable(m, [i=N,t=T], lower_bound = vamin[i], upper_bound = vamax[i], base_name = "va") # voltage angle
-
     # Generator variables
     pg = m.ext[:variables][:pg] = @variable(m, [g=G,t=T], base_name = "pg") # active power generation
     rg_lg1 = m.ext[:variables][:rg_lg1] = @variable(m, [g=G1,t=T],lower_bound=0, base_name = "rg_lg1") # frequency reserve generators loss of generation area 1
@@ -242,9 +241,6 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     rhvdc_lc1 = m.ext[:variables][:rhvdc_lc1] = @variable(m, [cv=CV1,t=T], lower_bound=0,  upper_bound=2*conv_p_dc_max[cv], base_name="rhvdc_lc1") #frequency reserve HVDC loss of converter area 1
     rhvdc_lg2 = m.ext[:variables][:rhvdc_lg2] = @variable(m, [cv=CV2,t=T], lower_bound=0,  upper_bound=2*conv_p_dc_max[cv], base_name="rhvdc_lg2") #frequency reserve HVDC loss of generation area 2
     rhvdc_lc2 = m.ext[:variables][:rhvdc_lc2] = @variable(m, [cv=CV2,t=T], lower_bound=0,  upper_bound=2*conv_p_dc_max[cv], base_name="rhvdc_lc2") #frequency reserve HVDC loss of converter area 2
-    rhvdc_l_reserve_1 = m.ext[:variables][:rhvdc_l_reserve_1] = @variable(m, [cv=CV1,t=T], lower_bound=0,  base_name="rhvdc_l_reserve_1") #frequency reserve for FCR provision
-    rhvdc_l_reserve_2 = m.ext[:variables][:rhvdc_l_reserve_2] = @variable(m, [cv=CV2,t=T], lower_bound=0,  base_name="rhvdc_l_reserve_2") #frequency reserve for FCR provision
-
 
   
 
@@ -332,7 +328,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
                             +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
                             +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
-                            +sum(Sreservecost[s]*rs_l_reserve_1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_l_reserve_1[s,t] for s in S1, t in T)*baseMVA 
                             +sum(Sreservecost[s]*rs_l_reserve_2[s,t] for s in S2, t in T)*baseMVA
 
                             +sum(HVDC_reservecost[cv]*rhvdc_lg1[cv,t] for cv in CV1, t in T)*baseMVA
@@ -346,7 +342,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(G_reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg_l_reserve_1[g,t] for g in G1, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg_l_reserve_2[g,t] for g in G2, t in T)*baseMVA
-                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*0.2*baseMVA
 
         )
     elseif max_gen_ncost == 2
@@ -379,7 +375,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(G_reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg_l_reserve_1[g,t] for g in G1, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg_l_reserve_2[g,t] for g in G2, t in T)*baseMVA
-                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*0.2*baseMVA
         )
     elseif max_gen_ncost == 3
         m.ext[:objective] = @NLobjective(m, Min,
@@ -411,7 +407,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(G_reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg_l_reserve_1[g,t] for g in G1, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg_l_reserve_2[g,t] for g in G2, t in T)*baseMVA
-                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*0.2*baseMVA
        )   
     elseif max_gen_ncost == 4
         m.ext[:objective] = @NLobjective(m, Min,
@@ -443,7 +439,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(G_reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg_l_reserve_1[g,t] for g in G1, t in T)*baseMVA
                             +sum(G_reservecost[g]*rg_l_reserve_2[g,t] for g in G2, t in T)*baseMVA
-                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*baseMVA*0
+                            +sum(flow_hvdc_abs[(d,f,e),t] for (d,f,e) in BD_dc, t in T)*0.2*baseMVA
        )
     end
 
@@ -734,21 +730,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     event_converter_1 = "1"   # MUST be a String to match δhvdc's first index set
     event_converter_2 = "3"   # MUST be a String to match δhvdc's first index set
 
-    # m.ext[:constraints][:event_generator_1_imposed] = @constraint(m, [t in T],
-    # δg[event_generator_1, t] == 1
-    # )
 
-    # m.ext[:constraints][:event_generator_2_imposed] = @constraint(m, [t in T],
-    # δg[event_generator_2, t] == 1
-    # )
-
-    # m.ext[:constraints][:event_converter_1_imposed] = @constraint(m, [t in T],
-    # δhvdc[event_converter_1, t] == 1
-    # )
-    
-    # m.ext[:constraints][:event_converter_2_imposed] = @constraint(m, [t in T],
-    # δhvdc[event_converter_2, t] == 1
-    # )
 
     bigMG=Dict()
     bigMC=Dict()
@@ -757,7 +739,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     end
 
     for cv in CV
-        bigMC[cv]=conv_p_ac_max[cv]
+        bigMC[cv]=2*conv_p_ac_max[cv]
     end
 
    
@@ -779,17 +761,17 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     (δhvdc[cv,t]-1)*bigMC[cv]<= plc1[t]-conv_p_ac[cv,t]
     )
 
-    m.ext[:constraints][:big_m2_conv_1]= @constraint(m, [cv=CV1,t=T],
-    plc1[t]-conv_p_ac[cv,t] <= (1-δhvdc[cv,t])*bigMC[cv]
-    )
+    # m.ext[:constraints][:big_m2_conv_1]= @constraint(m, [cv=CV1,t=T],
+    # plc1[t]-conv_p_ac[cv,t] <= (1-δhvdc[cv,t])*bigMC[cv]
+    # )
 
     m.ext[:constraints][:big_m1_conv_2]= @constraint(m, [cv=CV2,t=T],
     (δhvdc[cv,t]-1)*bigMC[cv]<= plc2[t]-conv_p_ac[cv,t]
     )
 
-    m.ext[:constraints][:big_m2_conv_2]= @constraint(m, [cv=CV2,t=T],
-    plc2[t]-conv_p_ac[cv,t] <= (1-δhvdc[cv,t])*bigMC[cv]
-    )
+    # m.ext[:constraints][:big_m2_conv_2]= @constraint(m, [cv=CV2,t=T],
+    # plc2[t]-conv_p_ac[cv,t] <= (1-δhvdc[cv,t])*bigMC[cv]
+    # )
 
     # Inertia value per area after the event
     Inertia_nadir_frequency_1=Dict()
