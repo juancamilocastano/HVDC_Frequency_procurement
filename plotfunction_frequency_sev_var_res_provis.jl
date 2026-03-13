@@ -47,40 +47,70 @@ plg1= JuMP.value.(m.ext[:variables][:plg1])*baseMVA
 plg2= JuMP.value.(m.ext[:variables][:plg2])*baseMVA
 plc1= JuMP.value.(m.ext[:variables][:plc1])*baseMVA
 plc2= JuMP.value.(m.ext[:variables][:plc2])*baseMVA
+plreserve_1= JuMP.value.(m.ext[:variables][:plreserve_1])*baseMVA
+plreserve_2= JuMP.value.(m.ext[:variables][:plreserve_2])*baseMVA
 plg1vec= Array(plg1)
 plg2vec= Array(plg2)
 plc1vec= Array(plc1)    
 plc2vec= Array(plc2)
+plreserve_1vec= Array(plreserve_1)
+plreserve_2vec= Array(plreserve_2)
 rg_lg1=JuMP.value.(m.ext[:variables][:rg_lg1])*baseMVA
 rg_lc1=JuMP.value.(m.ext[:variables][:rg_lc1])*baseMVA
+rg_l_reserve_1=JuMP.value.(m.ext[:variables][:rg_l_reserve_1])*baseMVA
+
 re_lg1=JuMP.value.(m.ext[:variables][:re_lg1])*baseMVA
 re_lc1=JuMP.value.(m.ext[:variables][:re_lc1])*baseMVA
+re_l_reserve_1=JuMP.value.(m.ext[:variables][:re_l_reserve_1])*baseMVA
+
 rs_lg1=JuMP.value.(m.ext[:variables][:rs_lg1])*baseMVA
 rs_lc1=JuMP.value.(m.ext[:variables][:rs_lc1])*baseMVA
+rs_l_reserve_1=JuMP.value.(m.ext[:variables][:rs_l_reserve_1])*baseMVA
+
 rhvdc_lg1=JuMP.value.(m.ext[:variables][:rhvdc_lg1])*baseMVA
 rhvdc_lc1=JuMP.value.(m.ext[:variables][:rhvdc_lc1])*baseMVA
+
 rg_lg2=JuMP.value.(m.ext[:variables][:rg_lg2])*baseMVA
 rg_lc2=JuMP.value.(m.ext[:variables][:rg_lc2])*baseMVA
+rg_l_reserve_2=JuMP.value.(m.ext[:variables][:rg_l_reserve_2])*baseMVA
+
 re_lg2=JuMP.value.(m.ext[:variables][:re_lg2])*baseMVA
 re_lc2=JuMP.value.(m.ext[:variables][:re_lc2])*baseMVA
+re_l_reserve_2=JuMP.value.(m.ext[:variables][:re_l_reserve_2])*baseMVA
+
 rs_lg2=JuMP.value.(m.ext[:variables][:rs_lg2])*baseMVA
 rs_lc2=JuMP.value.(m.ext[:variables][:rs_lc2])*baseMVA
+rs_l_reserve_2=JuMP.value.(m.ext[:variables][:rs_l_reserve_2])*baseMVA
+
 rhvdc_lg2=JuMP.value.(m.ext[:variables][:rhvdc_lg2])*baseMVA
 rhvdc_lc2=JuMP.value.(m.ext[:variables][:rhvdc_lc2])*baseMVA
 rg_lg1vec= [rg_lg1[g,t] for g in G1, t in T]
 rg_lc1vec= [rg_lc1[g,t] for g in G1, t in T]
+rg_l_reserve_1vec= [rg_l_reserve_1[g,t] for g in G1, t in T]
+
 re_lg1vec= [re_lg1[e,t] for e in E1, t in T]
 re_lc1vec= [re_lc1[e,t] for e in E1, t in T]
+re_l_reserve_1vec= [re_l_reserve_1[e,t] for e in E1, t in T]
+
 rs_lg1vec= [rs_lg1[s,t] for s in S1, t in T]
 rs_lc1vec= [rs_lc1[s,t] for s in S1, t in T]
+rs_l_reserve_1vec= [rs_l_reserve_1[s,t] for s in S1, t in T]
+
 rhvdc_lg1vec= [rhvdc_lg1[cv,t] for cv in CV1, t in T]
 rhvdc_lc1vec= [rhvdc_lc1[cv,t] for cv in CV1, t in T]
 rg_lg2vec= [rg_lg2[g,t] for g in G2, t in T]
 rg_lc2vec= [rg_lc2[g,t] for g in G2, t in T]
+rg_l_reserve_2vec= [rg_l_reserve_2[g,t] for g in G2, t in T]
+
+
 re_lg2vec= [re_lg2[e,t] for e in E2, t in T]
 re_lc2vec= [re_lc2[e,t] for e in E2, t in T]
+re_l_reserve_2vec= [re_l_reserve_2[e,t] for e in E2, t in T]
+
 rs_lg2vec= [rs_lg2[s,t] for s in S2, t in T]
 rs_lc2vec= [rs_lc2[s,t] for s in S2, t in T]
+rs_l_reserve_2vec= [rs_l_reserve_2[s,t] for s in S2, t in T]
+
 keys_1 = axes(rhvdc_lg1, 1)
 order_keys_1 = sort(keys_1, by = x -> parse(Int, x))
 keys_2 = axes(rhvdc_lg2, 1)
@@ -216,6 +246,7 @@ ax7 = fig7[1, 1] = Axis(fig7,
 
 lines!(ax7, plg1vec, label = "Loss generator 1")
 lines!(ax7, plc1vec, label = "Loss converter 1")
+lines!(ax7, plreserve_1vec, label = "Loss reserve Area 1")
 fig7[1, 2] = Legend(fig7, ax7, "Power loss Area 1", framevisible = false)
 fig7
 
@@ -227,6 +258,7 @@ ax8 = fig8[1, 1] = Axis(fig8,
 )
 lines!(ax8, plg2vec, label = "Loss generator 2")    
 lines!(ax8, plc2vec, label = "Loss converter 2")
+lines!(ax8, plreserve_2vec, label = "Loss reserve Area 2")
 fig8[1, 2] = Legend(fig8, ax8, "Power loss Area 2", framevisible = false)
 fig8
 
@@ -623,6 +655,41 @@ end
 axislegend(ax, position = :rb)
 
 fig30
+
+
+fig31 = Figure()
+ax31 = fig31[1, 1] = Axis(fig31,
+     title  = "Reserve allocation Area 1 pl reserve",
+     xlabel = "Time (hours)",
+     ylabel = "Reserve Power (MW)"
+)
+rg31    = vec(sum(rg_l_reserve_1vec,    dims=1))
+re31    = vec(sum(re_l_reserve_1vec,    dims=1))
+rs31    = vec(sum(rs_l_reserve_1vec,    dims=1))
+lines!(ax31, rg31, label = "Reserve thermal generators Area 1")
+lines!(ax31, re31, label = "Reserve electrolyzers Area 1")
+lines!(ax31, rs31, label = "Reserve storage Area 1")
+fig31[1, 2] = Legend(fig31, ax31, "Reserve Area 1", framevisible = false)
+fig31
+
+fig32 = Figure()
+ax32 = fig32[1, 1] = Axis(fig32,
+     title  = "Reserve allocation Area 2 pl reserve",
+     xlabel = "Time (hours)",
+     ylabel = "Reserve Power (MW)"
+)
+rg32    = vec(sum(rg_l_reserve_2vec,    dims=1))
+re32    = vec(sum(re_l_reserve_2vec,    dims=1))
+rs32    = vec(sum(rs_l_reserve_2vec,    dims=1))
+lines!(ax32, rg32, label = "Reserve thermal generators Area 2")
+lines!(ax32, re32, label = "Reserve electrolyzers Area 2")
+lines!(ax32, rs32, label = "Reserve storage Area 2")
+fig32[1, 2] = Legend(fig32, ax32, "Reserve Area 2", framevisible = false)
+fig32
+
+
+
+
 save("Failure_binary_variable.png", fig30)
 
 
@@ -657,6 +724,8 @@ save("2_Reserve per converter plc area 2.png",fig26)
 save("0_Reserve per converter plg and plc area 1.png",fig27)
 save("0_Reserve per converter plg and plc area 2.png",fig28)
 save("Power per converter.png",fig29)
+save("Reserve allocation Area 1 pl reserve.png", fig31)
+save("Reserve allocation Area 2 pl reserve.png", fig32)
 
 end
 

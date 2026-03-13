@@ -739,7 +739,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     end
 
     for cv in CV
-        bigMC[cv]=2*conv_p_ac_max[cv]
+        bigMC[cv]=conv_p_ac_max[cv]
     end
 
    
