@@ -56,6 +56,7 @@ include(joinpath(path,"build_ac_opf_acdc_frequency_silent_3.jl")) # Define build
 include(joinpath(path,"build_ac_opf_acdc_frequency_silent_4.jl")) # Define build_ac_opf_acdc! function
 include(joinpath(path,"build_ac_opf_acdc_frequency_several_res_var_without_loss_res.jl")) # Define build_ac_opf_acdc! function
 include(joinpath(path,"printparameters_frequency_several_res_var_without_loss_res.jl")) # Define build_ac_opf_acdc! function
+include(joinpath(path,"printparameters_frequency_sev_var_res_provi.jl")) # Define build_ac_opf_acdc! function
 include(joinpath(path,"build_ac_opf_acdc_frequency_sev_var_res_provi.jl")) # Define build_ac_opf_acdc! function
 include(joinpath(path,"plotfunction_frequency_sev_var_res_provis.jl")) # Define build_ac_opf_acdc! function
 
@@ -82,9 +83,13 @@ optimize!(m)
 #plotfunction_frequency!(m) # Plot the results
 
 # plotfunction_frequency_several_res_var_without_loss_res!(m) # Plot the results
-printparameters_frequency_several_res_var_without_loss_res!(m) # Print the results
+#printparameters_frequency_several_res_var_without_loss_res!(m) # Print the results
 
 plotfunction_frequency_sev_var_res_provis!(m) # Plot the results
+
+
+printparameters_frequency_sev_var_res_provi!(m) # Plot the results
+
 
 
 filename = "1_objective.txt"

@@ -297,7 +297,7 @@ function process_parameters!(m::Model, data::Dict, ts::DataFrame, tsw::DataFrame
     pmax = m.ext[:parameters][:pmax] = Dict(g => data["gen"][g]["pmax"] for g in G)  # maximum active power in pu
     pmin = m.ext[:parameters][:pmin] = Dict(g => data["gen"][g]["pmin"] for g in G)  # minimum active power in pu
     G_dt= m.ext[:parameters][:G_dt] = Dict(g => data["genextra"][g]["col_2"] for g in G) # deploytment time of reserve in seconds
-    ic= m.ext[:parameters][:ic] = Dict(g => data["genextra"][g]["col_3"] for g in G) #                                       constant in seconds
+    ic= m.ext[:parameters][:ic] = Dict(g => data["genextra"][g]["col_3"] for g in G) #constant in seconds
     upramp = m.ext[:parameters][:upramp] = Dict(g => data["genextra"][g]["col_4"]/baseMVA for g in G) # up ramp rate in pu/h
     downramp = m.ext[:parameters][:downramp] = Dict(g => data["genextra"][g]["col_5"]/baseMVA for g in G) # down ramp rate in pu/h
     MUT= m.ext[:parameters][:MUT] = Dict(g => data["genextra"][g]["col_6"] for g in G) # minimum up time in hours
@@ -309,7 +309,8 @@ function process_parameters!(m::Model, data::Dict, ts::DataFrame, tsw::DataFrame
     max_gen_ncost = m.ext[:parameters][:gen_max_ncost] = maximum([data["gen"][g]["ncost"] for g in G])
     m.ext[:parameters][:gen_ncost] = Dict(g => data["gen"][g]["ncost"] for g in G)
     m.ext[:parameters][:gen_cost] = Dict(g => data["gen"][g]["cost"] for g in G)
-    
+    start_up_cost=m.ext[:parameters][:startup_cost] = Dict(g => data["gen"][g]["startup"] for g in G)
+
     # Uniform the length of the cost vector for all generators
     for (gen_id,gen_cost) in m.ext[:parameters][:gen_cost]
         while (length(m.ext[:parameters][:gen_cost][gen_id]) < max_gen_ncost)

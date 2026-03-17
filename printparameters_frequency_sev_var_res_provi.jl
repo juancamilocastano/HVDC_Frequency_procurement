@@ -24,6 +24,14 @@ f2 = m.ext[:parameters][:f2]
 Edeployment = m.ext[:parameters][:Edeployment]
 G_dt = m.ext[:parameters][:G_dt]
 
+Ereservecost = m.ext[:parameters][:Ereservecost]
+G_reservecost = m.ext[:parameters][:G_reservecost]
+Sreservecost = m.ext[:parameters][:Sreservecost]
+Hydrogencost = m.ext[:parameters][:Hydrogencost]
+gen_cost = m.ext[:parameters][:gen_cost]
+Estartupcost = m.ext[:parameters][:Estartupcost]
+start_up_cost=m.ext[:parameters][:startup_cost]
+
 
 conv_p_ac=JuMP.value.(m.ext[:variables][:conv_p_ac])*baseMVA
 zgvec=JuMP.value.(m.ext[:variables][:zg])
@@ -165,6 +173,9 @@ pb_45= Array(pb[("4", "4", "5"),:])
 pb_46= Array(pb[("5", "4", "6"),:])
 
 
+betag=JuMP.value.(m.ext[:variables][:betag]) #start up variables of generators
+zesu=JuMP.value.(m.ext[:variables][:zesu]) #start up variables of electrolyzers
+
 rocof_plg1=Dict()
 rocof_plg2=Dict()
 rocof_plc1=Dict()
@@ -220,6 +231,10 @@ t_nadir_plg1=Dict()
 t_nadir_plg2=Dict()
 t_nadir_plc1=Dict()
 t_nadir_plc2=Dict()
+
+
+
+
 
 for t in T 
         Inertia_nadir_frequency_1[t]=sum((zgvec[g,t]-δgvec[g,t])*ic[g]*pmax[g]*baseMVA for g in G1)
@@ -282,6 +297,134 @@ for t in T
         Deltaf_nadir_plreserve_1[t] =((plreserve_1[t]- sum(re_l_reserve_1[e, t] for e in E1)- sum(rs_l_reserve_1[s, t] for s in S1))^2*G_dt["1"]/sum(rg_l_reserve_1[g, t]  for g in G1) + (sum(re_l_reserve_1[e, t] for e in E1) + sum(rs_l_reserve_1[s, t] for s in S1)) * Edeployment["1"] ) * f1 / (4 * Inertia_nadir_frequency_reserve_1[t])
         Deltaf_nadir_plreserve_2[t] =((plreserve_2[t]- sum(re_l_reserve_2[e, t] for e in E2)- sum(rs_l_reserve_2[s, t] for s in S2))^2*G_dt["1"]/sum(rg_l_reserve_2[g, t]  for g in G2) + (sum(re_l_reserve_2[e, t] for e in E2) + sum(rs_l_reserve_2[s, t] for s in S2)) * Edeployment["1"] ) * f2 / (4 * Inertia_nadir_frequency_reserve_2[t])
  end
+
+
+ #dictionaries with the maximum procured reserve for each type of reserve
+max_rg_1 = Dict(
+    k => maximum([total_rg_lc1[k], total_rg_l_reserve_1[k], total_rg_lg1[k]])
+    for k in keys(total_rg_lc1)
+)
+
+max_re_1 = Dict(
+    k => maximum([total_re_lc1[k], total_re_l_reserve_1[k], total_re_lg1[k]])
+    for k in keys(total_re_lc1)
+)
+
+max_rs_1 = Dict(
+    k => maximum([total_rs_lc1[k], total_rs_l_reserve_1[k], total_rs_lg1[k]])
+    for k in keys(total_rs_lc1)
+)
+
+max_rg_2 = Dict(
+    k => maximum([total_rg_lc2[k], total_rg_l_reserve_2[k], total_rg_lg2[k]])
+    for k in keys(total_rg_lc2)
+)
+
+max_re_2 = Dict(
+    k => maximum([total_re_lc2[k], total_re_l_reserve_2[k], total_re_lg2[k]])
+    for k in keys(total_re_lc2)
+)
+
+max_rs_2 = Dict(
+    k => maximum([total_rs_lc2[k], total_rs_l_reserve_2[k], total_rs_lg2[k]])
+    for k in keys(total_rs_lc2)
+)
+
+max_re_1_vec= [max_re_1[t] for t in T]
+max_rg_1_vec= [max_rg_1[t] for t in T]
+max_rs_1_vec= [max_rs_1[t] for t in T]
+
+total_re_cost_1= sum(max_re_1_vec)* Ereservecost["1"]
+total_rg_cost_1= sum(max_rg_1_vec)* G_reservecost["1"]
+total_rs_cost_1= sum(max_rs_1_vec)* Sreservecost["1"]
+
+total_hydrogen_cost_1 = sum(hfgconsum["1", :] .* Hydrogencost["1"])-sum(hfginyect["1", :] .* Hydrogencost["1"])
+total_startup_cost_generators_1 = sum(betag[g,t].*start_up_cost[g] for g in G1, t in T)
+total_startup_cost_electrolyzers_1 = sum(zesu[e,t].*Estartupcost[e] for e in E1, t in T)
+total_generation_cost_1 = sum(pg[g,t].*gen_cost[g] for g in G1, t in T)[1]/baseMVA
+total_cost_1 = total_re_cost_1 + total_rg_cost_1 + total_rs_cost_1 + total_hydrogen_cost_1 + total_startup_cost_generators_1 + total_startup_cost_electrolyzers_1 + total_generation_cost_1
+
+max_re_2_vec= [max_re_2[t] for t in T]
+max_rg_2_vec= [max_rg_2[t] for t in T]
+max_rs_2_vec= [max_rs_2[t] for t in T]
+
+total_re_cost_2= sum(max_re_2_vec)* Ereservecost["1"]
+total_rg_cost_2= sum(max_rg_2_vec)* G_reservecost["1"]
+total_rs_cost_2= sum(max_rs_2_vec)* Sreservecost["1"]
+
+total_hydrogen_cost_2 = sum(hfgconsum["2", :] .* Hydrogencost["1"])-sum(hfginyect["2", :] .* Hydrogencost["1"])
+total_startup_cost_generators_2 = sum(betag[g,t].*start_up_cost[g] for g in G2, t in T)
+total_startup_cost_electrolyzers_2 = sum(zesu[e,t].*Estartupcost[e] for e in E2, t in T)
+total_generation_cost_2 = sum(pg[g,t].*gen_cost[g] for g in G2, t in T)[1]/baseMVA
+total_cost_2 = total_re_cost_2 + total_rg_cost_2 + total_rs_cost_2 + total_hydrogen_cost_2 + total_startup_cost_generators_2 + total_startup_cost_electrolyzers_2 + total_generation_cost_2
+
+total_operational_cost_both=total_cost_1 + total_cost_2
+
+#second largest cost value of the reserves area 1
+second_rg_dict_1 = Dict(
+    k => sort([total_rg_lc1[k], total_rg_l_reserve_1[k], total_rg_lg1[k]])[2]
+    for k in keys(total_rg_lc1)
+)
+
+second_rg_dict_2 = Dict(
+    k => sort([total_rg_lc2[k], total_rg_l_reserve_2[k], total_rg_lg2[k]])[2]
+    for k in keys(total_rg_lc2)
+)
+
+second_re_dict_1 = Dict(
+    k => sort([total_re_lc1[k], total_re_l_reserve_1[k], total_re_lg1[k]])[2]
+    for k in keys(total_re_lc1)
+)
+
+second_re_dict_2 = Dict(
+    k => sort([total_re_lc2[k], total_re_l_reserve_2[k], total_re_lg2[k]])[2]
+    for k in keys(total_re_lc2)
+)
+
+second_rs_dict_1 = Dict(
+    k => sort([total_rs_lc1[k], total_rs_l_reserve_1[k], total_rs_lg1[k]])[2]
+    for k in keys(total_rs_lc1)
+)
+
+second_rs_dict_2 = Dict(
+    k => sort([total_rs_lc2[k], total_rs_l_reserve_2[k], total_rs_lg2[k]])[2]
+    for k in keys(total_rs_lc2)
+)
+#last cost value of the reserves
+last_rg_dict_1 = Dict(
+    k => sort([total_rg_lc1[k], total_rg_l_reserve_1[k], total_rg_lg1[k]])[1]
+    for k in keys(total_rg_lc1)
+)
+
+last_rg_dict_2 = Dict(
+    k => sort([total_rg_lc2[k], total_rg_l_reserve_2[k], total_rg_lg2[k]])[1]
+    for k in keys(total_rg_lc2)
+)
+last_re_dict_1 = Dict(
+    k => sort([total_re_lc1[k], total_re_l_reserve_1[k], total_re_lg1[k]])[1]
+    for k in keys(total_re_lc1)
+)
+
+last_re_dict_2 = Dict(
+    k => sort([total_re_lc2[k], total_re_l_reserve_2[k], total_re_lg2[k]])[1]
+    for k in keys(total_re_lc2)
+)
+last_rs_dict_1 = Dict(
+    k => sort([total_rs_lc1[k], total_rs_l_reserve_1[k], total_rs_lg1[k]])[1]
+    for k in keys(total_rs_lc1)
+)
+
+last_rs_dict_2 = Dict(
+    k => sort([total_rs_lc2[k], total_rs_l_reserve_2[k], total_rs_lg2[k]])[1]
+    for k in keys(total_rs_lc2)
+)
+
+rg_rest=(sum(values(second_rg_dict_1))+sum(values(last_rg_dict_1))+sum(values(second_rg_dict_2))+sum(values(last_rg_dict_2)))* G_reservecost["1"]
+re_rest=(sum(values(second_re_dict_1))+sum(values(last_re_dict_1))+sum(values(second_re_dict_2))+sum(values(last_re_dict_2)))* Ereservecost["1"]
+rs_rest=(sum(values(second_rs_dict_1))+sum(values(last_rs_dict_1))+sum(values(second_rs_dict_2))+sum(values(last_rs_dict_2)))* Sreservecost["1"]
+
+operational_cost_original_oj= total_operational_cost_both + (rg_rest + re_rest + rs_rest)
+
 
 
 # ===============================
@@ -444,6 +587,9 @@ println("Results written to frequency_results.txt")
 
 
 
+
 end
+
+
 
 
