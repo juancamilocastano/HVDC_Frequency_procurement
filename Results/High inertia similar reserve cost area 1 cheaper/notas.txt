@@ -1,8 +1,0 @@
--Aqui hay unos flujos en la inversión que no son tan claros para mi, tengo que analizarlo más.
-
-Ene l proceso de analizar, se hace reduccion de inercia a ver que pasa
-
--Efectivamente, la reserva más barrata tiende a ser procurada
-
--Como la inercia es tan alta, se tiende a procurar la reserva lenta con el generador, haciendo la restriccion de
-frecuencia la restriccion vinculante

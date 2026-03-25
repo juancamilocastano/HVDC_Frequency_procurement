@@ -1,0 +1,22 @@
+===== AREA 1 COSTS =====
+generation                          = 38167.67999210678
+startup_electrolyzers              = 0.0
+startup_generators                 = 0.0
+hydrogen                           = -13796.169828682749
+total_area_1                       = 34078.26907420576
+reserve_generators                 = 4989.7064968815885
+reserve_electrolyzers              = 2310.8727211415767
+reserve_storage                    = 2396.9956610948525
+
+===== AREA 2 COSTS =====
+generation                          = 93138.34770049184
+startup_electrolyzers              = 0.0
+startup_generators                 = 0.0
+hydrogen                           = -13406.964408135576
+total_area_2                       = 84587.82564063629
+reserve_generators                 = 4848.925871541436
+reserve_electrolyzers              = 2.1969570879895256e-5
+reserve_storage                    = 2.3100456825397496e-5
+
+===== TOTAL =====
+total_reconstructed                = 118666.09471484205

@@ -176,6 +176,7 @@ pb_46= Array(pb[("5", "4", "6"),:])
 betag=JuMP.value.(m.ext[:variables][:betag]) #start up variables of generators
 zesu=JuMP.value.(m.ext[:variables][:zesu]) #start up variables of electrolyzers
 
+
 rocof_plg1=Dict()
 rocof_plg2=Dict()
 rocof_plc1=Dict()
@@ -297,133 +298,6 @@ for t in T
         Deltaf_nadir_plreserve_1[t] =((plreserve_1[t]- sum(re_l_reserve_1[e, t] for e in E1)- sum(rs_l_reserve_1[s, t] for s in S1))^2*G_dt["1"]/sum(rg_l_reserve_1[g, t]  for g in G1) + (sum(re_l_reserve_1[e, t] for e in E1) + sum(rs_l_reserve_1[s, t] for s in S1)) * Edeployment["1"] ) * f1 / (4 * Inertia_nadir_frequency_reserve_1[t])
         Deltaf_nadir_plreserve_2[t] =((plreserve_2[t]- sum(re_l_reserve_2[e, t] for e in E2)- sum(rs_l_reserve_2[s, t] for s in S2))^2*G_dt["1"]/sum(rg_l_reserve_2[g, t]  for g in G2) + (sum(re_l_reserve_2[e, t] for e in E2) + sum(rs_l_reserve_2[s, t] for s in S2)) * Edeployment["1"] ) * f2 / (4 * Inertia_nadir_frequency_reserve_2[t])
  end
-
-
- #dictionaries with the maximum procured reserve for each type of reserve
-max_rg_1 = Dict(
-    k => maximum([total_rg_lc1[k], total_rg_l_reserve_1[k], total_rg_lg1[k]])
-    for k in keys(total_rg_lc1)
-)
-
-max_re_1 = Dict(
-    k => maximum([total_re_lc1[k], total_re_l_reserve_1[k], total_re_lg1[k]])
-    for k in keys(total_re_lc1)
-)
-
-max_rs_1 = Dict(
-    k => maximum([total_rs_lc1[k], total_rs_l_reserve_1[k], total_rs_lg1[k]])
-    for k in keys(total_rs_lc1)
-)
-
-max_rg_2 = Dict(
-    k => maximum([total_rg_lc2[k], total_rg_l_reserve_2[k], total_rg_lg2[k]])
-    for k in keys(total_rg_lc2)
-)
-
-max_re_2 = Dict(
-    k => maximum([total_re_lc2[k], total_re_l_reserve_2[k], total_re_lg2[k]])
-    for k in keys(total_re_lc2)
-)
-
-max_rs_2 = Dict(
-    k => maximum([total_rs_lc2[k], total_rs_l_reserve_2[k], total_rs_lg2[k]])
-    for k in keys(total_rs_lc2)
-)
-
-max_re_1_vec= [max_re_1[t] for t in T]
-max_rg_1_vec= [max_rg_1[t] for t in T]
-max_rs_1_vec= [max_rs_1[t] for t in T]
-
-total_re_cost_1= sum(max_re_1_vec)* Ereservecost["1"]
-total_rg_cost_1= sum(max_rg_1_vec)* G_reservecost["1"]
-total_rs_cost_1= sum(max_rs_1_vec)* Sreservecost["1"]
-
-total_hydrogen_cost_1 = sum(hfgconsum["1", :] .* Hydrogencost["1"])-sum(hfginyect["1", :] .* Hydrogencost["1"])
-total_startup_cost_generators_1 = sum(betag[g,t].*start_up_cost[g] for g in G1, t in T)
-total_startup_cost_electrolyzers_1 = sum(zesu[e,t].*Estartupcost[e] for e in E1, t in T)
-total_generation_cost_1 = sum(pg[g,t].*gen_cost[g] for g in G1, t in T)[1]/baseMVA
-total_cost_1 = total_re_cost_1 + total_rg_cost_1 + total_rs_cost_1 + total_hydrogen_cost_1 + total_startup_cost_generators_1 + total_startup_cost_electrolyzers_1 + total_generation_cost_1
-
-max_re_2_vec= [max_re_2[t] for t in T]
-max_rg_2_vec= [max_rg_2[t] for t in T]
-max_rs_2_vec= [max_rs_2[t] for t in T]
-
-total_re_cost_2= sum(max_re_2_vec)* Ereservecost["1"]
-total_rg_cost_2= sum(max_rg_2_vec)* G_reservecost["1"]
-total_rs_cost_2= sum(max_rs_2_vec)* Sreservecost["1"]
-
-total_hydrogen_cost_2 = sum(hfgconsum["2", :] .* Hydrogencost["1"])-sum(hfginyect["2", :] .* Hydrogencost["1"])
-total_startup_cost_generators_2 = sum(betag[g,t].*start_up_cost[g] for g in G2, t in T)
-total_startup_cost_electrolyzers_2 = sum(zesu[e,t].*Estartupcost[e] for e in E2, t in T)
-total_generation_cost_2 = sum(pg[g,t].*gen_cost[g] for g in G2, t in T)[1]/baseMVA
-total_cost_2 = total_re_cost_2 + total_rg_cost_2 + total_rs_cost_2 + total_hydrogen_cost_2 + total_startup_cost_generators_2 + total_startup_cost_electrolyzers_2 + total_generation_cost_2
-
-total_operational_cost_both=total_cost_1 + total_cost_2
-
-#second largest cost value of the reserves area 1
-second_rg_dict_1 = Dict(
-    k => sort([total_rg_lc1[k], total_rg_l_reserve_1[k], total_rg_lg1[k]])[2]
-    for k in keys(total_rg_lc1)
-)
-
-second_rg_dict_2 = Dict(
-    k => sort([total_rg_lc2[k], total_rg_l_reserve_2[k], total_rg_lg2[k]])[2]
-    for k in keys(total_rg_lc2)
-)
-
-second_re_dict_1 = Dict(
-    k => sort([total_re_lc1[k], total_re_l_reserve_1[k], total_re_lg1[k]])[2]
-    for k in keys(total_re_lc1)
-)
-
-second_re_dict_2 = Dict(
-    k => sort([total_re_lc2[k], total_re_l_reserve_2[k], total_re_lg2[k]])[2]
-    for k in keys(total_re_lc2)
-)
-
-second_rs_dict_1 = Dict(
-    k => sort([total_rs_lc1[k], total_rs_l_reserve_1[k], total_rs_lg1[k]])[2]
-    for k in keys(total_rs_lc1)
-)
-
-second_rs_dict_2 = Dict(
-    k => sort([total_rs_lc2[k], total_rs_l_reserve_2[k], total_rs_lg2[k]])[2]
-    for k in keys(total_rs_lc2)
-)
-#last cost value of the reserves
-last_rg_dict_1 = Dict(
-    k => sort([total_rg_lc1[k], total_rg_l_reserve_1[k], total_rg_lg1[k]])[1]
-    for k in keys(total_rg_lc1)
-)
-
-last_rg_dict_2 = Dict(
-    k => sort([total_rg_lc2[k], total_rg_l_reserve_2[k], total_rg_lg2[k]])[1]
-    for k in keys(total_rg_lc2)
-)
-last_re_dict_1 = Dict(
-    k => sort([total_re_lc1[k], total_re_l_reserve_1[k], total_re_lg1[k]])[1]
-    for k in keys(total_re_lc1)
-)
-
-last_re_dict_2 = Dict(
-    k => sort([total_re_lc2[k], total_re_l_reserve_2[k], total_re_lg2[k]])[1]
-    for k in keys(total_re_lc2)
-)
-last_rs_dict_1 = Dict(
-    k => sort([total_rs_lc1[k], total_rs_l_reserve_1[k], total_rs_lg1[k]])[1]
-    for k in keys(total_rs_lc1)
-)
-
-last_rs_dict_2 = Dict(
-    k => sort([total_rs_lc2[k], total_rs_l_reserve_2[k], total_rs_lg2[k]])[1]
-    for k in keys(total_rs_lc2)
-)
-
-rg_rest=(sum(values(second_rg_dict_1))+sum(values(last_rg_dict_1))+sum(values(second_rg_dict_2))+sum(values(last_rg_dict_2)))* G_reservecost["1"]
-re_rest=(sum(values(second_re_dict_1))+sum(values(last_re_dict_1))+sum(values(second_re_dict_2))+sum(values(last_re_dict_2)))* Ereservecost["1"]
-rs_rest=(sum(values(second_rs_dict_1))+sum(values(last_rs_dict_1))+sum(values(second_rs_dict_2))+sum(values(last_rs_dict_2)))* Sreservecost["1"]
-
-operational_cost_original_oj= total_operational_cost_both + (rg_rest + re_rest + rs_rest)
 
 
 
@@ -585,6 +459,541 @@ end
 
 println("Results written to frequency_results.txt")
 
+# =========================
+# RECONSTRUCCIÓN OBJETIVO CASO 2
+# COSTOS POR ÁREA Y COSTO TOTAL
+# =========================
+
+# Parámetro que faltaba en tu bloque
+HVDC_reservecost = m.ext[:parameters][:convdc][:HVDC_reservecost]
+
+# -------------------------------------------------
+# 1) COSTOS ÁREA 1
+# -------------------------------------------------
+
+# Generación
+obj_gen_1 = sum(
+    gen_cost[g][1] * (pg[g,t] / baseMVA) + gen_cost[g][2]
+    for g in G1, t in T
+)
+
+# Arranque electrolizadores
+obj_estart_1 = sum(
+    Estartupcost[e] * zesu[e,t]
+    for e in E1, t in T
+)
+
+# Arranque generadores
+obj_gstart_1 = sum(
+    start_up_cost[g] * betag[g,t]
+    for g in G1, t in T
+)
+
+# Hidrógeno
+obj_h2_1 = sum(
+    Hydrogencost[e] * (-hfginyect[e,t] + hfgconsum[e,t])
+    for e in E1, t in T
+)
+
+# Reservas electrolizadores
+obj_res_e_1 = sum(Ereservecost[e] * re_lg1[e,t] for e in E1, t in T) +
+              sum(Ereservecost[e] * re_lc1[e,t] for e in E1, t in T) +
+              sum(Ereservecost[e] * re_l_reserve_1[e,t] for e in E1, t in T)
+
+# Reservas almacenamiento
+obj_res_s_1 = sum(Sreservecost[s] * rs_lg1[s,t] for s in S1, t in T) +
+              sum(Sreservecost[s] * rs_lc1[s,t] for s in S1, t in T) +
+              sum(Sreservecost[s] * rs_l_reserve_1[s,t] for s in S1, t in T)
+
+# Reservas HVDC
+obj_res_hvdc_1 = sum(HVDC_reservecost[cv] * rhvdc_lg1[cv,t] for cv in CV1, t in T) +
+                 sum(HVDC_reservecost[cv] * rhvdc_lc1[cv,t] for cv in CV1, t in T)
+
+# Reservas generadores
+obj_res_g_1 = sum(G_reservecost[g] * rg_lg1[g,t] for g in G1, t in T) +
+              sum(G_reservecost[g] * rg_lc1[g,t] for g in G1, t in T) +
+              sum(G_reservecost[g] * rg_l_reserve_1[g,t] for g in G1, t in T)
+
+# Costo total área 1
+obj_area_1 = obj_gen_1 + obj_estart_1 + obj_gstart_1 + obj_h2_1 +
+             obj_res_e_1 + obj_res_s_1 + obj_res_hvdc_1 + obj_res_g_1
+
+
+# -------------------------------------------------
+# 2) COSTOS ÁREA 2
+# -------------------------------------------------
+
+# Generación
+obj_gen_2 = sum(
+    gen_cost[g][1] * (pg[g,t] / baseMVA) + gen_cost[g][2]
+    for g in G2, t in T
+)
+
+# Arranque electrolizadores
+obj_estart_2 = sum(
+    Estartupcost[e] * zesu[e,t]
+    for e in E2, t in T
+)
+
+# Arranque generadores
+obj_gstart_2 = sum(
+    start_up_cost[g] * betag[g,t]
+    for g in G2, t in T
+)
+
+# Hidrógeno
+obj_h2_2 = sum(
+    Hydrogencost[e] * (-hfginyect[e,t] + hfgconsum[e,t])
+    for e in E2, t in T
+)
+
+# Reservas electrolizadores
+obj_res_e_2 = sum(Ereservecost[e] * re_lg2[e,t] for e in E2, t in T) +
+              sum(Ereservecost[e] * re_lc2[e,t] for e in E2, t in T) +
+              sum(Ereservecost[e] * re_l_reserve_2[e,t] for e in E2, t in T)
+
+# Reservas almacenamiento
+obj_res_s_2 = sum(Sreservecost[s] * rs_lg2[s,t] for s in S2, t in T) +
+              sum(Sreservecost[s] * rs_lc2[s,t] for s in S2, t in T) +
+              sum(Sreservecost[s] * rs_l_reserve_2[s,t] for s in S2, t in T)
+
+# Reservas HVDC
+obj_res_hvdc_2 = sum(HVDC_reservecost[cv] * rhvdc_lg2[cv,t] for cv in CV2, t in T) +
+                 sum(HVDC_reservecost[cv] * rhvdc_lc2[cv,t] for cv in CV2, t in T)
+
+# Reservas generadores
+obj_res_g_2 = sum(G_reservecost[g] * rg_lg2[g,t] for g in G2, t in T) +
+              sum(G_reservecost[g] * rg_lc2[g,t] for g in G2, t in T) +
+              sum(G_reservecost[g] * rg_l_reserve_2[g,t] for g in G2, t in T)
+
+# Costo total área 2
+obj_area_2 = obj_gen_2 + obj_estart_2 + obj_gstart_2 + obj_h2_2 +
+             obj_res_e_2 + obj_res_s_2 + obj_res_hvdc_2 + obj_res_g_2
+
+
+# -------------------------------------------------
+# 3) COSTO TOTAL
+# -------------------------------------------------
+obj_total_reconstruido = obj_area_1 + obj_area_2
+
+# Valor del objetivo del modelo
+obj_modelo = JuMP.objective_value(m)
+
+# -------------------------------------------------
+# 4) RESULTADOS EN DICCIONARIOS
+# -------------------------------------------------
+
+costos_area_1 = Dict(
+    "generacion" => obj_gen_1,
+    "startup_electrolizadores" => obj_estart_1,
+    "startup_generadores" => obj_gstart_1,
+    "hidrogeno" => obj_h2_1,
+    "reservas_electrolizadores" => obj_res_e_1,
+    "reservas_storage" => obj_res_s_1,
+    "reservas_hvdc" => obj_res_hvdc_1,
+    "reservas_generadores" => obj_res_g_1,
+    "total_area_1" => obj_area_1
+)
+
+costos_area_2 = Dict(
+    "generacion" => obj_gen_2,
+    "startup_electrolizadores" => obj_estart_2,
+    "startup_generadores" => obj_gstart_2,
+    "hidrogeno" => obj_h2_2,
+    "reservas_electrolizadores" => obj_res_e_2,
+    "reservas_storage" => obj_res_s_2,
+    "reservas_hvdc" => obj_res_hvdc_2,
+    "reservas_generadores" => obj_res_g_2,
+    "total_area_2" => obj_area_2
+)
+
+costos_totales = Dict(
+    "total_area_1" => obj_area_1,
+    "total_area_2" => obj_area_2,
+    "total_reconstruido" => obj_total_reconstruido,
+    "objetivo_modelo" => obj_modelo,
+    "error_absoluto" => abs(obj_total_reconstruido - obj_modelo)
+)
+
+# -------------------------------------------------
+# 5) IMPRESIÓN
+# -------------------------------------------------
+
+println("===== COSTOS ÁREA 1 =====")
+for (k,v) in costos_area_1
+    println(rpad(k, 30), " = ", v)
+end
+
+println("\n===== COSTOS ÁREA 2 =====")
+for (k,v) in costos_area_2
+    println(rpad(k, 30), " = ", v)
+end
+
+println("\n===== COSTOS TOTALES =====")
+for (k,v) in costos_totales
+    println(rpad(k, 30), " = ", v)
+end
+
+# -------------------------------------------------
+# 7) SAVE RESULTS TO TXT FILE
+# -------------------------------------------------
+
+output_file = "operating_costs_results.txt"
+
+open(output_file, "w") do io
+
+    println(io, "===== AREA 1 COSTS =====")
+    for (k,v) in costos_area_1
+        println(io, rpad(k, 35), " = ", v)
+    end
+
+    println(io, "\n===== AREA 2 COSTS =====")
+    for (k,v) in costos_area_2
+        println(io, rpad(k, 35), " = ", v)
+    end
+
+    println(io, "\n===== TOTAL COSTS =====")
+    for (k,v) in costos_totales
+        println(io, rpad(k, 35), " = ", v)
+    end
+
+end
+
+println("Results saved to: ", output_file)
+
+
+
+
+
+
+
+
+
+
+
+# =========================
+# OPERATING COSTS BY AREA
+# USING MAXIMUM PROCURED POWER PER HOUR
+# AND THE COST ASSOCIATED WITH THE SELECTED RESERVE
+# =========================
+
+HVDC_reservecost = m.ext[:parameters][:convdc][:HVDC_reservecost]
+
+# -------------------------------------------------
+# Helper function:
+# Given candidate reserve powers and candidate reserve costs,
+# select the cost associated with the largest procured power
+# -------------------------------------------------
+function select_cost_from_max_power(power_candidates::Vector{Float64},
+                                    cost_candidates::Vector{Float64})
+    idx = argmax(power_candidates)
+    return power_candidates[idx], cost_candidates[idx], idx
+end
+
+# -------------------------------------------------
+# 1) NON-RESERVE COSTS AREA 1
+# -------------------------------------------------
+
+obj_gen_1 = sum(
+    gen_cost[g][1] * (pg[g,t] / baseMVA) + gen_cost[g][2]
+    for g in G1, t in T
+)
+
+obj_estart_1 = sum(
+    Estartupcost[e] * zesu[e,t]
+    for e in E1, t in T
+)
+
+obj_gstart_1 = sum(
+    start_up_cost[g] * betag[g,t]
+    for g in G1, t in T
+)
+
+obj_h2_1 = sum(
+    Hydrogencost[e] * (-hfginyect[e,t] + hfgconsum[e,t])
+    for e in E1, t in T
+)
+
+# -------------------------------------------------
+# 2) NON-RESERVE COSTS AREA 2
+# -------------------------------------------------
+
+obj_gen_2 = sum(
+    gen_cost[g][1] * (pg[g,t] / baseMVA) + gen_cost[g][2]
+    for g in G2, t in T
+)
+
+obj_estart_2 = sum(
+    Estartupcost[e] * zesu[e,t]
+    for e in E2, t in T
+)
+
+obj_gstart_2 = sum(
+    start_up_cost[g] * betag[g,t]
+    for g in G2, t in T
+)
+
+obj_h2_2 = sum(
+    Hydrogencost[e] * (-hfginyect[e,t] + hfgconsum[e,t])
+    for e in E2, t in T
+)
+
+# -------------------------------------------------
+# 3) RESERVE COSTS BASED ON MAX PROCURED POWER - AREA 1
+# -------------------------------------------------
+
+max_power_e_1 = Dict()
+selected_cost_e_1 = Dict()
+selected_type_e_1 = Dict()
+
+max_power_s_1 = Dict()
+selected_cost_s_1 = Dict()
+selected_type_s_1 = Dict()
+
+max_power_g_1 = Dict()
+selected_cost_g_1 = Dict()
+selected_type_g_1 = Dict()
+
+max_power_hvdc_1 = Dict()
+selected_cost_hvdc_1 = Dict()
+selected_type_hvdc_1 = Dict()
+
+for t in T
+    # Electrolyzers - area 1
+    p_lg = sum(re_lg1[e,t] for e in E1)
+    p_lc = sum(re_lc1[e,t] for e in E1)
+    p_lr = sum(re_l_reserve_1[e,t] for e in E1)
+
+    c_lg = sum(Ereservecost[e] * re_lg1[e,t] for e in E1)
+    c_lc = sum(Ereservecost[e] * re_lc1[e,t] for e in E1)
+    c_lr = sum(Ereservecost[e] * re_l_reserve_1[e,t] for e in E1)
+
+    max_power_e_1[t], selected_cost_e_1[t], idx = select_cost_from_max_power(
+        [p_lg, p_lc, p_lr],
+        [c_lg, c_lc, c_lr]
+    )
+    selected_type_e_1[t] = ["lg", "lc", "l_reserve"][idx]
+
+    # Storage - area 1
+    p_lg = sum(rs_lg1[s,t] for s in S1)
+    p_lc = sum(rs_lc1[s,t] for s in S1)
+    p_lr = sum(rs_l_reserve_1[s,t] for s in S1)
+
+    c_lg = sum(Sreservecost[s] * rs_lg1[s,t] for s in S1)
+    c_lc = sum(Sreservecost[s] * rs_lc1[s,t] for s in S1)
+    c_lr = sum(Sreservecost[s] * rs_l_reserve_1[s,t] for s in S1)
+
+    max_power_s_1[t], selected_cost_s_1[t], idx = select_cost_from_max_power(
+        [p_lg, p_lc, p_lr],
+        [c_lg, c_lc, c_lr]
+    )
+    selected_type_s_1[t] = ["lg", "lc", "l_reserve"][idx]
+
+    # Generators - area 1
+    p_lg = sum(rg_lg1[g,t] for g in G1)
+    p_lc = sum(rg_lc1[g,t] for g in G1)
+    p_lr = sum(rg_l_reserve_1[g,t] for g in G1)
+
+    c_lg = sum(G_reservecost[g] * rg_lg1[g,t] for g in G1)
+    c_lc = sum(G_reservecost[g] * rg_lc1[g,t] for g in G1)
+    c_lr = sum(G_reservecost[g] * rg_l_reserve_1[g,t] for g in G1)
+
+    max_power_g_1[t], selected_cost_g_1[t], idx = select_cost_from_max_power(
+        [p_lg, p_lc, p_lr],
+        [c_lg, c_lc, c_lr]
+    )
+    selected_type_g_1[t] = ["lg", "lc", "l_reserve"][idx]
+
+    # HVDC - area 1
+    p_lg = sum(rhvdc_lg1[cv,t] for cv in CV1)
+    p_lc = sum(rhvdc_lc1[cv,t] for cv in CV1)
+
+    c_lg = sum(HVDC_reservecost[cv] * rhvdc_lg1[cv,t] for cv in CV1)
+    c_lc = sum(HVDC_reservecost[cv] * rhvdc_lc1[cv,t] for cv in CV1)
+
+    max_power_hvdc_1[t], selected_cost_hvdc_1[t], idx = select_cost_from_max_power(
+        [p_lg, p_lc],
+        [c_lg, c_lc]
+    )
+    selected_type_hvdc_1[t] = ["lg", "lc"][idx]
+end
+
+obj_res_e_1 = sum(selected_cost_e_1[t] for t in T)
+obj_res_s_1 = sum(selected_cost_s_1[t] for t in T)
+obj_res_g_1 = sum(selected_cost_g_1[t] for t in T)
+obj_res_hvdc_1 = sum(selected_cost_hvdc_1[t] for t in T)
+
+obj_reserve_1 = obj_res_e_1 + obj_res_s_1 + obj_res_g_1 + obj_res_hvdc_1
+
+obj_area_1 = obj_gen_1 + obj_estart_1 + obj_gstart_1 + obj_h2_1 + obj_reserve_1
+
+# -------------------------------------------------
+# 4) RESERVE COSTS BASED ON MAX PROCURED POWER - AREA 2
+# -------------------------------------------------
+
+max_power_e_2 = Dict()
+selected_cost_e_2 = Dict()
+selected_type_e_2 = Dict()
+
+max_power_s_2 = Dict()
+selected_cost_s_2 = Dict()
+selected_type_s_2 = Dict()
+
+max_power_g_2 = Dict()
+selected_cost_g_2 = Dict()
+selected_type_g_2 = Dict()
+
+max_power_hvdc_2 = Dict()
+selected_cost_hvdc_2 = Dict()
+selected_type_hvdc_2 = Dict()
+
+for t in T
+    # Electrolyzers - area 2
+    p_lg = sum(re_lg2[e,t] for e in E2)
+    p_lc = sum(re_lc2[e,t] for e in E2)
+    p_lr = sum(re_l_reserve_2[e,t] for e in E2)
+
+    c_lg = sum(Ereservecost[e] * re_lg2[e,t] for e in E2)
+    c_lc = sum(Ereservecost[e] * re_lc2[e,t] for e in E2)
+    c_lr = sum(Ereservecost[e] * re_l_reserve_2[e,t] for e in E2)
+
+    max_power_e_2[t], selected_cost_e_2[t], idx = select_cost_from_max_power(
+        [p_lg, p_lc, p_lr],
+        [c_lg, c_lc, c_lr]
+    )
+    selected_type_e_2[t] = ["lg", "lc", "l_reserve"][idx]
+
+    # Storage - area 2
+    p_lg = sum(rs_lg2[s,t] for s in S2)
+    p_lc = sum(rs_lc2[s,t] for s in S2)
+    p_lr = sum(rs_l_reserve_2[s,t] for s in S2)
+
+    c_lg = sum(Sreservecost[s] * rs_lg2[s,t] for s in S2)
+    c_lc = sum(Sreservecost[s] * rs_lc2[s,t] for s in S2)
+    c_lr = sum(Sreservecost[s] * rs_l_reserve_2[s,t] for s in S2)
+
+    max_power_s_2[t], selected_cost_s_2[t], idx = select_cost_from_max_power(
+        [p_lg, p_lc, p_lr],
+        [c_lg, c_lc, c_lr]
+    )
+    selected_type_s_2[t] = ["lg", "lc", "l_reserve"][idx]
+
+    # Generators - area 2
+    p_lg = sum(rg_lg2[g,t] for g in G2)
+    p_lc = sum(rg_lc2[g,t] for g in G2)
+    p_lr = sum(rg_l_reserve_2[g,t] for g in G2)
+
+    c_lg = sum(G_reservecost[g] * rg_lg2[g,t] for g in G2)
+    c_lc = sum(G_reservecost[g] * rg_lc2[g,t] for g in G2)
+    c_lr = sum(G_reservecost[g] * rg_l_reserve_2[g,t] for g in G2)
+
+    max_power_g_2[t], selected_cost_g_2[t], idx = select_cost_from_max_power(
+        [p_lg, p_lc, p_lr],
+        [c_lg, c_lc, c_lr]
+    )
+    selected_type_g_2[t] = ["lg", "lc", "l_reserve"][idx]
+
+    # HVDC - area 2
+    p_lg = sum(rhvdc_lg2[cv,t] for cv in CV2)
+    p_lc = sum(rhvdc_lc2[cv,t] for cv in CV2)
+
+    c_lg = sum(HVDC_reservecost[cv] * rhvdc_lg2[cv,t] for cv in CV2)
+    c_lc = sum(HVDC_reservecost[cv] * rhvdc_lc2[cv,t] for cv in CV2)
+
+    max_power_hvdc_2[t], selected_cost_hvdc_2[t], idx = select_cost_from_max_power(
+        [p_lg, p_lc],
+        [c_lg, c_lc]
+    )
+    selected_type_hvdc_2[t] = ["lg", "lc"][idx]
+end
+
+obj_res_e_2 = sum(selected_cost_e_2[t] for t in T)
+obj_res_s_2 = sum(selected_cost_s_2[t] for t in T)
+obj_res_g_2 = sum(selected_cost_g_2[t] for t in T)
+obj_res_hvdc_2 = sum(selected_cost_hvdc_2[t] for t in T)
+
+obj_reserve_2 = obj_res_e_2 + obj_res_s_2 + obj_res_g_2 + obj_res_hvdc_2
+
+obj_area_2 = obj_gen_2 + obj_estart_2 + obj_gstart_2 + obj_h2_2 + obj_reserve_2
+
+# -------------------------------------------------
+# 5) TOTAL COST
+# -------------------------------------------------
+
+obj_total_reconstructed = obj_area_1 + obj_area_2
+
+# -------------------------------------------------
+# 6) OUTPUT DICTIONARIES
+# -------------------------------------------------
+
+costos_area_1 = Dict(
+    "generation" => obj_gen_1,
+    "startup_electrolyzers" => obj_estart_1,
+    "startup_generators" => obj_gstart_1,
+    "hydrogen" => obj_h2_1,
+    "reserve_electrolyzers" => obj_res_e_1,
+    "reserve_storage" => obj_res_s_1,
+    "reserve_generators" => obj_res_g_1,
+    "reserve_hvdc" => obj_res_hvdc_1,
+    "total_reserve_area_1" => obj_reserve_1,
+    "total_area_1" => obj_area_1
+)
+
+costos_area_2 = Dict(
+    "generation" => obj_gen_2,
+    "startup_electrolyzers" => obj_estart_2,
+    "startup_generators" => obj_gstart_2,
+    "hydrogen" => obj_h2_2,
+    "reserve_electrolyzers" => obj_res_e_2,
+    "reserve_storage" => obj_res_s_2,
+    "reserve_generators" => obj_res_g_2,
+    "reserve_hvdc" => obj_res_hvdc_2,
+    "total_reserve_area_2" => obj_reserve_2,
+    "total_area_2" => obj_area_2
+)
+
+costos_totales = Dict(
+    "total_area_1" => obj_area_1,
+    "total_area_2" => obj_area_2,
+    "total_reconstructed" => obj_total_reconstructed
+)
+
+# -------------------------------------------------
+# 7) PRINT TO TXT FILE (ORDERED)
+# -------------------------------------------------
+
+output_file = "real_cost_results.txt"
+
+open(output_file, "w") do io
+
+    println(io, "===== AREA 1 COSTS =====")
+
+    println(io, "generation                          = ", costos_area_1["generation"])
+    println(io, "startup_electrolyzers              = ", costos_area_1["startup_electrolyzers"])
+    println(io, "startup_generators                 = ", costos_area_1["startup_generators"])
+    println(io, "hydrogen                           = ", costos_area_1["hydrogen"])
+    println(io, "total_area_1                       = ", costos_area_1["total_area_1"])
+    println(io, "reserve_generators                 = ", costos_area_1["reserve_generators"])
+    println(io, "reserve_electrolyzers              = ", costos_area_1["reserve_electrolyzers"])
+    println(io, "reserve_storage                    = ", costos_area_1["reserve_storage"])
+
+    println(io, "\n===== AREA 2 COSTS =====")
+
+    println(io, "generation                          = ", costos_area_2["generation"])
+    println(io, "startup_electrolyzers              = ", costos_area_2["startup_electrolyzers"])
+    println(io, "startup_generators                 = ", costos_area_2["startup_generators"])
+    println(io, "hydrogen                           = ", costos_area_2["hydrogen"])
+    println(io, "total_area_2                       = ", costos_area_2["total_area_2"])
+    println(io, "reserve_generators                 = ", costos_area_2["reserve_generators"])
+    println(io, "reserve_electrolyzers              = ", costos_area_2["reserve_electrolyzers"])
+    println(io, "reserve_storage                    = ", costos_area_2["reserve_storage"])
+
+    println(io, "\n===== TOTAL =====")
+    println(io, "total_reconstructed                = ", costos_totales["total_reconstructed"])
+
+end
+
+println("Results saved to ", output_file)
 
 
 
