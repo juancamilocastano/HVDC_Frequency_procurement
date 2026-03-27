@@ -1,0 +1,28 @@
+===== AREA 1 COSTS =====
+generacion                          = 32399.99999960607
+startup_electrolizadores            = 0.0
+startup_generadores                 = 0.0
+reservas_hvdc                       = 5.8144925454896175
+hidrogeno                           = 9.021075183954686e-5
+total_area_1                        = 42594.470849086116
+reservas_generadores                = 8680.792078953664
+reservas_electrolizadores           = 731.0643554426041
+reservas_storage                    = 776.7998323275303
+
+===== AREA 2 COSTS =====
+generacion                          = 111758.41017092246
+startup_electrolizadores            = 0.0
+startup_generadores                 = 0.0
+reservas_hvdc                       = 6.785714331865676
+hidrogeno                           = -6792.003995453615
+reservas_generadores                = 5004.806299643715
+total_area_2                        = 109977.9981990798
+reservas_electrolizadores           = 4.662058780228096e-6
+reservas_storage                    = 4.973304495208451e-6
+
+===== TOTAL COSTS =====
+total_reconstruido                  = 152572.46904816592
+total_area_1                        = 42594.470849086116
+error_absoluto                      = 0.0
+total_area_2                        = 109977.9981990798
+objetivo_modelo                     = 152572.46904816592
