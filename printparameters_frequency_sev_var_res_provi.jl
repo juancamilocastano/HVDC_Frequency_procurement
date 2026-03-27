@@ -476,6 +476,7 @@ obj_gen_1 = sum(
     gen_cost[g][1] * (pg[g,t] / baseMVA) + gen_cost[g][2]
     for g in G1, t in T
 )
+total_gen_area_1 = sum(pg[g,t] for g in G1, t in T)
 
 # Arranque electrolizadores
 obj_estart_1 = sum(
@@ -528,6 +529,7 @@ obj_gen_2 = sum(
     gen_cost[g][1] * (pg[g,t] / baseMVA) + gen_cost[g][2]
     for g in G2, t in T
 )
+total_gen_area_2 = sum(pg[g,t] for g in G2, t in T)
 
 # Arranque electrolizadores
 obj_estart_2 = sum(
@@ -592,7 +594,8 @@ costos_area_1 = Dict(
     "reservas_storage" => obj_res_s_1,
     "reservas_hvdc" => obj_res_hvdc_1,
     "reservas_generadores" => obj_res_g_1,
-    "total_area_1" => obj_area_1
+    "total_area_1" => obj_area_1,
+    "total_generacion_area_1" => total_gen_area_1
 )
 
 costos_area_2 = Dict(
@@ -604,7 +607,8 @@ costos_area_2 = Dict(
     "reservas_storage" => obj_res_s_2,
     "reservas_hvdc" => obj_res_hvdc_2,
     "reservas_generadores" => obj_res_g_2,
-    "total_area_2" => obj_area_2
+    "total_area_2" => obj_area_2,
+    "total_generacion_area_2" => total_gen_area_2
 )
 
 costos_totales = Dict(
