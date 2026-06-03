@@ -212,7 +212,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
 
     va = m.ext[:variables][:va] = @variable(m, [i=N,t=T], lower_bound = vamin[i], upper_bound = vamax[i], base_name = "va") # voltage angle
     # Generator variables
-    pg = m.ext[:variables][:pg] = @variable(m, [g=G,t=T], base_name = "pg") # active power generation
+    pg = m.ext[:variables][:pg] = @variable(m, [g=G,t=T],lower_bound=0, upper_bound=pmax[g], base_name = "pg") # active power generation
     rg_lg1 = m.ext[:variables][:rg_lg1] = @variable(m, [g=G1,t=T],lower_bound=0, base_name = "rg_lg1") # frequency reserve generators loss of generation area 1
     rg_lc1 = m.ext[:variables][:rg_lc1] = @variable(m, [g=G1,t=T],lower_bound=0, base_name = "rg_lc1") # frequency reserve generators loss of converter area 1
     rg_lg2 = m.ext[:variables][:rg_lg2] = @variable(m, [g=G2,t=T],lower_bound=0, base_name = "rg_lg2") # frequency reserve generators loss of generation area 2
@@ -238,6 +238,9 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     δbranch= m.ext[:variables][:δbranch] = @variable(m, [cv=CV,t=T], binary=true, base_name="δbranch") #binary variable event converter
    # Converters
     conv_p_ac = m.ext[:variables][:conv_p_ac] = @variable(m, [cv=CV,t=T], lower_bound=-conv_p_ac_max[cv], upper_bound=conv_p_ac_max[cv], base_name="conv_p_ac") # converter active power
+    conv_p_ac_abs = m.ext[:variables][:conv_p_ac_abs] = @variable(m, [cv=CV,t=T], lower_bound=0,upper_bound=conv_p_ac_max[cv], base_name="conv_p_ac_abs") # absorve power converter
+    conv_p_ac_inj= m.ext[:variables][:conv_p_ac_inj] = @variable(m, [cv=CV,t=T], lower_bound=0, upper_bound=conv_p_ac_max[cv], base_name="conv_p_ac_inj") # injected power converter
+    u_conv_p_ac = m.ext[:variables][:u_conv_p_ac] = @variable(m, [cv=CV,t=T], binary=true, base_name="u_conv_p_ac") # binary variable for converter active power
     conv_p_dc = m.ext[:variables][:conv_p_dc] = @variable(m, [cv=CV,t=T], lower_bound=-conv_p_dc_max[cv], upper_bound=conv_p_dc_max[cv], base_name="conv_p_dc") # converter active power
     δhvdc= m.ext[:variables][:δhvdc] = @variable(m, [cv=CV,t=T], binary=true, base_name="δhvdc") #binary variable event converter
     rhvdc_lg1 = m.ext[:variables][:rhvdc_lg1] = @variable(m, [cv=CV1,t=T], lower_bound=0,  upper_bound=2*(40/40)conv_p_dc_max[cv], base_name="rhvdc_lg1") #frequency reserve HHDC loss of generation area 1
@@ -521,7 +524,22 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
         conv_p_ac[cv,t] + conv_p_dc[cv,t]==0
     )#3.17
 
+    #Converter Net Power Balance
+    m.ext[:constraints][:conv_injec_ac_abs_inj] = @constraint(m, [cv=CV,t=T],
+    conv_p_ac[cv,t] == conv_p_ac_inj[cv,t]-conv_p_ac_abs[cv,t]
+    )
 
+
+    
+    #Converter injection and absorption limits
+    m.ext[:constraints][:conv_injec_ac_limit] = @constraint(m, [cv=CV,t=T],
+    conv_p_ac_inj[cv,t] <= conv_p_ac_max[cv]*u_conv_p_ac[cv,t]
+    )
+    m.ext[:constraints][:conv_abs_limit] = @constraint(m, [cv=CV,t=T],
+    conv_p_ac_abs[cv,t] <= conv_p_ac_max[cv]*(1-u_conv_p_ac[cv,t])
+    )
+
+conv_p_ac_max
                     #It is assumed that the reactance is 0.13 p.u. based on the test system data
     m.ext[:constraints][:direccional_flow_dc] = @constraint(m, [(d,f,e) = BD_dc_fr,t=T],
         brdc_p[(d,f,e),t] ==  -brdc_p[(d, e, f),t]
@@ -697,10 +715,10 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     )
     #Events constraints (loss of converters)
     m.ext[:constraints][:conv_constraint_1]= @constraint(m, [cv=CV1,t=T],
-    conv_p_ac[cv,t]<=plc1[t]
+    conv_p_ac_inj[cv,t]<=plc1[t]
     )
     m.ext[:constraints][:conv_constraint_2]= @constraint(m, [cv=CV2,t=T],
-    conv_p_ac[cv,t]<=plc2[t]
+    conv_p_ac_inj[cv,t]<=plc2[t]
     )
 
     #event constraint (frequency reserve provision)
@@ -769,20 +787,20 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     )
 
     m.ext[:constraints][:big_m1_conv_1]= @constraint(m, [cv=CV1,t=T],
-    (δhvdc[cv,t]-1)*bigMC[cv]<= plc1[t]-conv_p_ac[cv,t]
+    (δhvdc[cv,t]-1)*bigMC[cv]<= plc1[t]-conv_p_ac_inj[cv,t]
     )
 
-    # m.ext[:constraints][:big_m2_conv_1]= @constraint(m, [cv=CV1,t=T],
-    # plc1[t]-conv_p_ac[cv,t] <= (1-δhvdc[cv,t])*bigMC[cv]
-    # )
+    m.ext[:constraints][:big_m2_conv_1]= @constraint(m, [cv=CV1,t=T],
+    plc1[t]-conv_p_ac_inj[cv,t] <= (1-δhvdc[cv,t])*bigMC[cv]
+    )
 
     m.ext[:constraints][:big_m1_conv_2]= @constraint(m, [cv=CV2,t=T],
-    (δhvdc[cv,t]-1)*bigMC[cv]<= plc2[t]-conv_p_ac[cv,t]
+    (δhvdc[cv,t]-1)*bigMC[cv]<= plc2[t]-conv_p_ac_inj[cv,t]
     )
 
-    # m.ext[:constraints][:big_m2_conv_2]= @constraint(m, [cv=CV2,t=T],
-    # plc2[t]-conv_p_ac[cv,t] <= (1-δhvdc[cv,t])*bigMC[cv]
-    # )
+    m.ext[:constraints][:big_m2_conv_2]= @constraint(m, [cv=CV2,t=T],
+    plc2[t]-conv_p_ac_inj[cv,t] <= (1-δhvdc[cv,t])*bigMC[cv]
+    )
 
     # Inertia value per area after the event
     Inertia_nadir_frequency_1=Dict()
