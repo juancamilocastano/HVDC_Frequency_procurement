@@ -328,31 +328,9 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(start_up_cost[g]*betag[g,t] for g in G, t in T)
                             +sum(Estartupcost[e]*zesu[e,t] for e in E, t in T)*baseMVA
                             +sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Ereservecost[e]*re_lg1[e,t] for e in E1, t in T)*baseMVA
-                            +sum(Ereservecost[e]*re_lg2[e,t] for e in E2, t in T)*baseMVA
-                            +sum(Ereservecost[e]*re_lc1[e,t] for e in E1, t in T)*baseMVA
-                            +sum(Ereservecost[e]*re_lc2[e,t] for e in E2, t in T)*baseMVA
-                            +sum(Ereservecost[e]*re_l_reserve_1[e,t] for e in E1, t in T)*baseMVA
-                            +sum(Ereservecost[e]*re_l_reserve_2[e,t] for e in E2, t in T)*baseMVA
-
-                            +sum(Sreservecost[s]*rs_lg1[s,t] for s in S1, t in T)*baseMVA
-                            +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
-                            +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
-                            +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
-                            +sum(Sreservecost[s]*rs_l_reserve_1[s,t] for s in S1, t in T)*baseMVA 
-                            +sum(Sreservecost[s]*rs_l_reserve_2[s,t] for s in S2, t in T)*baseMVA
-
-                            +sum(HVDC_reservecost[cv]*rhvdc_lg1[cv,t] for cv in CV1, t in T)*baseMVA
-                            +sum(HVDC_reservecost[cv]*rhvdc_lg2[cv,t] for cv in CV2, t in T)*baseMVA
-                            +sum(HVDC_reservecost[cv]*rhvdc_lc1[cv,t] for cv in CV1, t in T)*baseMVA
-                            +sum(HVDC_reservecost[cv]*rhvdc_lc2[cv,t] for cv in CV2, t in T)*baseMVA
-
-                            +sum(G_reservecost[g]*rg_lg1[g,t] for g in G1, t in T)*baseMVA
-                            +sum(G_reservecost[g]*rg_lg2[g,t] for g in G2, t in T)*baseMVA
-                            +sum(G_reservecost[g]*rg_lc1[g,t] for g in G1, t in T)*baseMVA
-                            +sum(G_reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
-                            +sum(G_reservecost[g]*rg_l_reserve_1[g,t] for g in G1, t in T)*baseMVA
-                            +sum(G_reservecost[g]*rg_l_reserve_2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*RE[e,t] for e in E, t in T)*baseMVA
+                            +sum(Sreservecost[s]*RS[s,t] for s in S, t in T)*baseMVA
+                            +sum(G_reservecost[g]*RG[g,t] for g in G, t in T)*baseMVA
                              
 
         )
@@ -411,6 +389,14 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
         m.ext[:constraints][:power_balance] = @constraint(m, [n=N,t=T],
         sum(pg[g,t] for g in G if gen_bus[g] == n)+  sum(conv_p_ac[cv,t] for cv in CV if conv_bus[cv] == n) +wind[n][t]-rcu[n,t]+sum(psd[s,t] for s in S if storage_bus[s] == n)-sum(psc[s,t] for s in S if storage_bus[s] == n)  - sum(pb[(br,i,j),t] for (br,i,j) in B_arcs[n]) -sum(pe[e,t] for e in E if electrolyzer_bus[e] == n ) -sum(pe_compressor[e,t] for e in E if electrolyzer_bus[e] == n )-demand[n][t]== 0 #3.7
         )
+
+    #Enforce  hvdc links power flow direction constraints
+    m.ext[:constraints][:hvdc_flow_direction_1] = @constraint(m, [t=T],
+        conv_p_ac["2",t]==-conv_p_ac_max["2"])
+
+    m.ext[:constraints][:hvdc_flow_direction_2] = @constraint(m, [t=T],
+    conv_p_ac["3",t]==-conv_p_ac_max["3"])
+
 
 
     # Power flow constraints in from and to direction

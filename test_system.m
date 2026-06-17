@@ -23,7 +23,7 @@ mpc.baseMVA = 100.0;
 mpc.baseKG=31034.48;
 mpc.frequency1=50;
 mpc.frequency2=50;
-mpc.rocof1=0.5;
+mpc.rocof1=0.6;
 mpc.rocof2=0.4;
 mpc.deltaf1=0.8;
 mpc.deltaf2=0.8;
@@ -102,11 +102,11 @@ mpc.branchdc = [
 % 1-model  2-startup  3-shutdown  4-n   5-c2   6-c1($/MWh)  7-c0
 mpc.gencost = [
     2        5            0         3     0        1          0;   % G1
-    2        5            0         3     0        1	       0;   % G2
+    2        5            0         3     0        1	      0;   % G2
     2        5            0         3     0        1          0;   % G3
     2        5            0         3     0        25          0;   % G4
     2        5            0         3     0        35          0;   % G5
-    2        5            0         3     0        35          0;   % G6
+    2        5            0         3     0        45          0;   % G6
 ];
 
 %% generator extra

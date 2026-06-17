@@ -1,0 +1,4 @@
+1_HVDC_power_flows: Los flujos de cargas por las lineas van de la zona mas barata a la mas
+cara entre las horas 0 y 6  y 7 y 24, pero se invierten en las otras horas, esto no es del todo claro, además, los flujos no van a su maxima capacidad.
+
+2_reserve per converter plg area 2. En las horas que hay inversion de los flujos, la reserva que los convertidores entregan al area dos esta muchas veces por encima del valor nominal del convertidor
