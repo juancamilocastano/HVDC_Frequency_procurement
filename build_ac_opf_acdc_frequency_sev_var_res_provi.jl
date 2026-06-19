@@ -219,7 +219,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     rg_lc2 = m.ext[:variables][:rg_lc2] = @variable(m, [g=G2,t=T],lower_bound=0, base_name = "rg_lc2") # frequency reserve generators loss of converter area 2
     rg_l_reserve_1= m.ext[:variables][:rg_l_reserve_1] = @variable(m, [g=G1,t=T], base_name = "rg_l_reserve_1") # frequency reserve generators loss of generation area 
     rg_l_reserve_2= m.ext[:variables][:rg_l_reserve_2] = @variable(m, [g=G2,t=T], base_name = "rg_l_reserve_2") # frequency reserve generators loss of generation area 2
-    RG= m.ext[:variables][:RG] = @variable(m, [g=G,t=T], lower_bound=0, base_name = "RG") # Generator reserve provision for FCR
+
     
     # Branch variables
     pb = m.ext[:variables][:pb] = @variable(m, [(b,i,j) in B_ac,t=T],lower_bound = -pmaxbranch[b], upper_bound = pmaxbranch[b], base_name = "pb") # from side active power flow (i->j)
@@ -268,7 +268,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     re_lc2=  m.ext[:variables][:re_lc2] = @variable(m, [e=E2,t=T], lower_bound=0, base_name="re_lc2") #frequency reserve electrolyzer loss of converter area 2
     re_l_reserve_1= m.ext[:variables][:re_l_reserve_1] = @variable(m, [e=E1,t=T], lower_bound=0, base_name="re_l_reserve_1") #frequency reserve for FCR provision
     re_l_reserve_2= m.ext[:variables][:re_l_reserve_2] = @variable(m, [e=E2,t=T], lower_bound=0, base_name="re_l_reserve_2") #frequency reserve for FCR provision
-    RE= m.ext[:variables][:RE] = @variable(m, [e=E,t=T], lower_bound=0, base_name="RE") # Electrolyzer reserve provision for FCR
+
     
     # Storage variables
     psc = m.ext[:variables][:psc] = @variable(m, [s=S,t=T],lower_bound=0, base_name="psc") #Charging power of the batteries
@@ -281,7 +281,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     rs_lc2=  m.ext[:variables][:rs_lc2] = @variable(m, [s=S2,t=T], lower_bound=0, base_name="rs_lc2") #frequency reserve batteries loss of converter area 2
     rs_l_reserve_1= m.ext[:variables][:rs_l_reserve_1] = @variable(m, [s=S1,t=T], lower_bound=0, base_name="rs_l_reserve_1") #frequency reserve for FCR provision
     rs_l_reserve_2= m.ext[:variables][:rs_l_reserve_2] = @variable(m, [s=S2,t=T], lower_bound=0, base_name="rs_l_reserve_2") #frequency reserve for FCR provision
-    RS= m.ext[:variables][:RS] = @variable(m, [s=S,t=T], lower_bound=0, base_name="RS") # Storage reserve provision for FCR
+
 
     # Frequency stability variables
     plg1= m.ext[:variables][:plg1] = @variable(m, [t=T], lower_bound=0, base_name="plg1") # loss of power generators area 1
@@ -328,9 +328,31 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(start_up_cost[g]*betag[g,t] for g in G, t in T)
                             +sum(Estartupcost[e]*zesu[e,t] for e in E, t in T)*baseMVA
                             +sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Ereservecost[e]*RE[e,t] for e in E, t in T)*baseMVA
-                            +sum(Sreservecost[s]*RS[s,t] for s in S, t in T)*baseMVA
-                            +sum(G_reservecost[g]*RG[g,t] for g in G, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_l_reserve_1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_l_reserve_2[e,t] for e in E2, t in T)*baseMVA
+
+                            +sum(Sreservecost[s]*rs_lg1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_l_reserve_1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_l_reserve_2[s,t] for s in S2, t in T)*baseMVA
+
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lg2[cv,t] for cv in CV2, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc1[cv,t] for cv in CV1, t in T)*baseMVA
+                            +sum(HVDC_reservecost[cv]*rhvdc_lc2[cv,t] for cv in CV2, t in T)*baseMVA
+
+                            +sum(G_reservecost[g]*rg_lg1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lg2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lc1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_l_reserve_1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_l_reserve_2[g,t] for g in G2, t in T)*baseMVA
                              
 
         )
@@ -341,10 +363,27 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(Estartupcost[e]*zesu[e,t] for e in E, t in T)
                             +sum(start_up_cost[g]*betag[g,t] for g in G, t in T)
                             +sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Ereservecost[e]*RE[e,t] for e in E, t in T)*baseMVA
-                            +sum(Sreservecost[s]*RS[s,t] for s in S, t in T)*baseMVA
-                            +sum(G_reservecost[g]*RG[g,t] for g in G, t in T)*baseMVA
-                             
+                            +sum(Ereservecost[e]*re_lg1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_l_reserve_1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_l_reserve_2[e,t] for e in E2, t in T)*baseMVA
+
+                            +sum(Sreservecost[s]*rs_lg1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_l_reserve_1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_l_reserve_2[s,t] for s in S2, t in T)*baseMVA
+
+                            +sum(G_reservecost[g]*rg_lg1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lg2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lc1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_l_reserve_1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_l_reserve_2[g,t] for g in G2, t in T)*baseMVA
+
         )
     elseif max_gen_ncost == 3
         m.ext[:objective] = @NLobjective(m, Min,
@@ -353,9 +392,26 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(Estartupcost[e]*zesu[e,t] for e in E, t in T)
                             +sum(start_up_cost[g]*betag[g,t] for g in G, t in T)
                             +sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Ereservecost[e]*RE[e,t] for e in E, t in T)*baseMVA
-                            +sum(Sreservecost[s]*RS[s,t] for s in S, t in T)*baseMVA
-                            +sum(G_reservecost[g]*RG[g,t] for g in G, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_l_reserve_1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_l_reserve_2[e,t] for e in E2, t in T)*baseMVA
+
+                            +sum(Sreservecost[s]*rs_lg1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_l_reserve_1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_l_reserve_2[s,t] for s in S2, t in T)*baseMVA
+
+                            +sum(G_reservecost[g]*rg_lg1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lg2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lc1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_l_reserve_1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_l_reserve_2[g,t] for g in G2, t in T)*baseMVA
                              
        )   
     elseif max_gen_ncost == 4
@@ -365,9 +421,26 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
                             +sum(Estartupcost[e]*zesu[e,t] for e in E, t in T)
                             +sum(start_up_cost[g]*betag[g,t] for g in G, t in T)
                             +sum(Hydrogencost[e]*baseKG*(-hfginyect[e,t]+hfgconsum[e,t]) for e in E, t in T)
-                            +sum(Ereservecost[e]*RE[e,t] for e in E, t in T)*baseMVA
-                            +sum(Sreservecost[s]*RS[s,t] for s in S, t in T)*baseMVA
-                            +sum(G_reservecost[g]*RG[g,t] for g in G, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lg2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_lc2[e,t] for e in E2, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_l_reserve_1[e,t] for e in E1, t in T)*baseMVA
+                            +sum(Ereservecost[e]*re_l_reserve_2[e,t] for e in E2, t in T)*baseMVA
+
+                            +sum(Sreservecost[s]*rs_lg1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lg2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_lc2[s,t] for s in S2, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_l_reserve_1[s,t] for s in S1, t in T)*baseMVA
+                            +sum(Sreservecost[s]*rs_l_reserve_2[s,t] for s in S2, t in T)*baseMVA
+
+                            +sum(G_reservecost[g]*rg_lg1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lg2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lc1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_lc2[g,t] for g in G2, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_l_reserve_1[g,t] for g in G1, t in T)*baseMVA
+                            +sum(G_reservecost[g]*rg_l_reserve_2[g,t] for g in G2, t in T)*baseMVA
 
                              
        )
@@ -391,11 +464,11 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
         )
 
     #Enforce  hvdc links power flow direction constraints
-    m.ext[:constraints][:hvdc_flow_direction_1] = @constraint(m, [t=T],
-        conv_p_ac["2",t]==-conv_p_ac_max["2"])
+    # m.ext[:constraints][:hvdc_flow_direction_1] = @constraint(m, [t=T],
+    #     conv_p_ac["2",t]==-conv_p_ac_max["2"])
 
-    m.ext[:constraints][:hvdc_flow_direction_2] = @constraint(m, [t=T],
-    conv_p_ac["3",t]==-conv_p_ac_max["3"])
+    # m.ext[:constraints][:hvdc_flow_direction_2] = @constraint(m, [t=T],
+    # conv_p_ac["3",t]==-conv_p_ac_max["3"])
 
 
 
@@ -629,64 +702,7 @@ conv_p_ac_max
         )
 
     
-    #Reserve procurement consistency constraint
-    m.ext[:constraints][:reserve_procurement_consistency_RE_A1_g] = @constraint(m, [e in E1, t in T],
-        RE[e,t] >= re_lg1[e,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RE_A1_c] = @constraint(m, [e in E1, t in T],
-        RE[e,t] >= re_lc1[e,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RE_A1_reserve] = @constraint(m, [e in E1, t in T],
-        RE[e,t] >= re_l_reserve_1[e,t] 
-    )   
-
-    m.ext[:constraints][:reserve_procurement_consistency_RE_A2_g] = @constraint(m, [e in E2, t in T],
-        RE[e,t] >= re_lg2[e,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RE_A2_c] = @constraint(m, [e in E2, t in T],
-        RE[e,t] >= re_lc2[e,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RE_A2_reserve] = @constraint(m, [e in E2, t in T],
-        RE[e,t] >= re_l_reserve_2[e,t] 
-    )
-
-    m.ext[:constraints][:reserve_procurement_consistency_RS_A1_g] = @constraint(m, [s in S1, t in T],
-        RS[s,t] >= rs_lg1[s,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RS_A1_c] = @constraint(m, [s in S1, t in T],
-        RS[s,t] >= rs_lc1[s,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RS_A1_reserve] = @constraint(m, [s in S1, t in T],
-        RS[s,t] >= rs_l_reserve_1[s,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RS_A2_g] = @constraint(m, [s in S2, t in T],
-        RS[s,t] >= rs_lg2[s,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RS_A2_c] = @constraint(m, [s in S2, t in T],
-        RS[s,t] >= rs_lc2[s,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RS_A2_reserve] = @constraint(m, [s in S2, t in T],
-        RS[s,t] >= rs_l_reserve_2[s,t] 
-    )
-
-     m.ext[:constraints][:reserve_procurement_consistency_RG_A1_g] = @constraint(m, [g in G1, t in T],
-        RG[g,t] >= rg_lg1[g,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RG_A1_c] = @constraint(m, [g in G1, t in T],
-        RG[g,t] >= rg_lc1[g,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RG_A1_reserve] = @constraint(m, [g in G1, t in T],
-        RG[g,t] >= rg_l_reserve_1[g,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RG_A2_g] = @constraint(m, [g in G2, t in T],
-        RG[g,t] >= rg_lg2[g,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RG_A2_c] = @constraint(m, [g in G2, t in T],
-        RG[g,t] >= rg_lc2[g,t] 
-    )
-    m.ext[:constraints][:reserve_procurement_consistency_RG_A2_reserve] = @constraint(m, [g in G2, t in T],
-        RG[g,t] >= rg_l_reserve_2[g,t] 
-    )   
+   
 
 
     #Events constraints (loss of generators)

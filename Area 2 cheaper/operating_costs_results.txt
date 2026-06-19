@@ -1,30 +1,30 @@
 ===== AREA 1 COSTS =====
-generacion                          = 97788.34983846644
+generacion                          = 102407.1831632097
 startup_electrolizadores            = 0.0
 startup_generadores                 = 0.0
-reservas_hvdc                       = 1.314184770671544
-hidrogeno                           = -16063.422457373881
-total_area_1                        = 116425.66169120758
-total_generacion_area_1             = 3473.182140214464
-reservas_generadores                = 16149.455535183717
-reservas_electrolizadores           = 8976.802542722973
-reservas_storage                    = 9573.162047437658
+reservas_hvdc                       = 1.7337176792920992
+hidrogeno                           = -16386.206900037807
+total_area_1                        = 107996.60678956017
+total_generacion_area_1             = 3465.564324305644
+reservas_generadores                = 12809.737188194918
+reservas_electrolizadores           = 5924.449990920405
+reservas_storage                    = 3239.7096295936635
 
 ===== AREA 2 COSTS =====
-generacion                          = 3784.8750163558284
+generacion                          = 3784.867054916798
 startup_electrolizadores            = 0.0
 startup_generadores                 = 0.0
-reservas_hvdc                       = 13.673133633508469
-hidrogeno                           = -13406.936085531272
-reservas_generadores                = 763.3077457070581
-total_area_2                        = -8844.925213660445
-total_generacion_area_2             = 3784.8750163558284
-reservas_electrolizadores           = 0.07678559863674203
-reservas_storage                    = 0.07819057579563606
+reservas_hvdc                       = 9.750132507828303
+hidrogeno                           = -13406.896637144324
+reservas_generadores                = 2396.0273360270935
+total_area_2                        = -7216.252113692604
+total_generacion_area_2             = 3784.867054916798
+reservas_electrolizadores           = 0.0
+reservas_storage                    = 0.0
 
 ===== TOTAL COSTS =====
-total_reconstruido                  = 107580.73647754714
-total_area_1                        = 116425.66169120758
-error_absoluto                      = 19222.427923277355
-total_area_2                        = -8844.925213660445
-objetivo_modelo                     = 88358.30855426978
+total_reconstruido                  = 100780.35467586757
+total_area_1                        = 107996.60678956017
+error_absoluto                      = 11.483850187098142
+total_area_2                        = -7216.252113692604
+objetivo_modelo                     = 100768.87082568047
