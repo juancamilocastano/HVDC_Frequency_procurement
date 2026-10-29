@@ -213,12 +213,12 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     va = m.ext[:variables][:va] = @variable(m, [i=N,t=T], lower_bound = vamin[i], upper_bound = vamax[i], base_name = "va") # voltage angle
     # Generator variables
     pg = m.ext[:variables][:pg] = @variable(m, [g=G,t=T],lower_bound=0, upper_bound=pmax[g], base_name = "pg") # active power generation
-    rg_lg1 = m.ext[:variables][:rg_lg1] = @variable(m, [g=G1,t=T],lower_bound=0, base_name = "rg_lg1") # frequency reserve generators loss of generation area 1
-    rg_lc1 = m.ext[:variables][:rg_lc1] = @variable(m, [g=G1,t=T],lower_bound=0, base_name = "rg_lc1") # frequency reserve generators loss of converter area 1
-    rg_lg2 = m.ext[:variables][:rg_lg2] = @variable(m, [g=G2,t=T],lower_bound=0, base_name = "rg_lg2") # frequency reserve generators loss of generation area 2
-    rg_lc2 = m.ext[:variables][:rg_lc2] = @variable(m, [g=G2,t=T],lower_bound=0, base_name = "rg_lc2") # frequency reserve generators loss of converter area 2
-    rg_l_reserve_1= m.ext[:variables][:rg_l_reserve_1] = @variable(m, [g=G1,t=T], base_name = "rg_l_reserve_1") # frequency reserve generators loss of generation area 
-    rg_l_reserve_2= m.ext[:variables][:rg_l_reserve_2] = @variable(m, [g=G2,t=T], base_name = "rg_l_reserve_2") # frequency reserve generators loss of generation area 2
+    rg_lg1 = m.ext[:variables][:rg_lg1] = @variable(m, [g=G1,t=T],lower_bound=0,upper_bound=upramp[g]*G_dt[g]/3600, base_name = "rg_lg1") # frequency reserve generators loss of generation area 1
+    rg_lc1 = m.ext[:variables][:rg_lc1] = @variable(m, [g=G1,t=T],lower_bound=0, upper_bound=upramp[g]*G_dt[g]/3600, base_name = "rg_lc1") # frequency reserve generators loss of converter area 1
+    rg_lg2 = m.ext[:variables][:rg_lg2] = @variable(m, [g=G2,t=T],lower_bound=0, upper_bound=upramp[g]*G_dt[g]/3600, base_name = "rg_lg2") # frequency reserve generators loss of generation area 2
+    rg_lc2 = m.ext[:variables][:rg_lc2] = @variable(m, [g=G2,t=T],lower_bound=0, upper_bound=upramp[g]*G_dt[g]/3600, base_name = "rg_lc2") # frequency reserve generators loss of converter area 2
+    rg_l_reserve_1= m.ext[:variables][:rg_l_reserve_1] = @variable(m, [g=G1,t=T],upper_bound=upramp[g]*G_dt[g]/3600, base_name = "rg_l_reserve_1") # frequency reserve generators loss of generation area 
+    rg_l_reserve_2= m.ext[:variables][:rg_l_reserve_2] = @variable(m, [g=G2,t=T], upper_bound=upramp[g]*G_dt[g]/3600, base_name = "rg_l_reserve_2") # frequency reserve generators loss of generation area 2
 
     
     # Branch variables
@@ -500,14 +500,7 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     # pb[(b, i, j),t] ==  1/0.13*(va[i,t] - va[j,t])
     #)
 
-    m.ext[:constraints][:max_gen_power] = @constraint(m, [g=G,t=T],
-        pg[g,t] <= pmax[g]*zg[g,t]
-        )#3.11
-
-    m.ext[:constraints][:min_gen_power] = @constraint(m, [g=G,t=T],
-        pg[g,t]>= pmin[g]*zg[g,t]
-        )#3.11
-
+ 
 
 
     # Nodal power balance DC  taken from https://github.com/Electa-Git/OPES/blob/main/opf_acdc/build_ac_opf_acdc_tap.jl line 431
@@ -526,8 +519,11 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     conv_p_ac[cv,t] == conv_p_ac_inj[cv,t]-conv_p_ac_abs[cv,t]
     )
 
+                    #It is assumed that the reactance is 0.13 p.u. based on the test system data
+    m.ext[:constraints][:direccional_flow_dc] = @constraint(m, [(d,f,e) = BD_dc_fr,t=T],
+        brdc_p[(d,f,e),t] ==  -brdc_p[(d, e, f),t]
+        )
 
-    
     #Converter injection and absorption limits
     m.ext[:constraints][:conv_injec_ac_limit] = @constraint(m, [cv=CV,t=T],
     conv_p_ac_inj[cv,t] <= conv_p_ac_max[cv]*u_conv_p_ac[cv,t]
@@ -535,32 +531,82 @@ function build_ac_opf_acdc_frequency_sev_var_res_provi!(m::Model)
     m.ext[:constraints][:conv_abs_limit] = @constraint(m, [cv=CV,t=T],
     conv_p_ac_abs[cv,t] <= conv_p_ac_max[cv]*(1-u_conv_p_ac[cv,t])
     )
-
-conv_p_ac_max
-                    #It is assumed that the reactance is 0.13 p.u. based on the test system data
-    m.ext[:constraints][:direccional_flow_dc] = @constraint(m, [(d,f,e) = BD_dc_fr,t=T],
-        brdc_p[(d,f,e),t] ==  -brdc_p[(d, e, f),t]
-        )
-
-    
        
 
     #Unit commitment constraints
+   m.ext[:constraints][:max_gen_power] = @constraint(m, [g=G,t=T],
+        pg[g,t] <= pmax[g]*zg[g,t]
+        )#3.11
+
+    m.ext[:constraints][:min_gen_power] = @constraint(m, [g=G,t=T],
+        pg[g,t]>= pmin[g]*zg[g,t]
+        )#3.11
+
+        m.ext[:constraints][:max_gen_power_rg_g_1] = @constraint(m, [g=G1,t=T],
+        pg[g,t]+ rg_lg1[g,t]<= pmax[g]*zg[g,t]
+        )
+
+        m.ext[:constraints][:min_gen_power_rg_g_1] = @constraint(m, [g=G1,t=T],
+         pg[g,t]+ rg_lg1[g,t]>= pmin[g]*zg[g,t]
+        )
+
+        m.ext[:constraints][:max_gen_power_rg_c_1] = @constraint(m, [g=G1,t=T],
+        pg[g,t]+ rg_lc1[g,t]<= pmax[g]*zg[g,t]
+        )
+
+        m.ext[:constraints][:min_gen_power_rg_c_1] = @constraint(m, [g=G1,t=T],
+         pg[g,t]+ rg_lc1[g,t]>= pmin[g]*zg[g,t]
+        )
+
+                m.ext[:constraints][:max_gen_power_rg_reserve_1] = @constraint(m, [g=G1,t=T],
+        pg[g,t]+ rg_l_reserve_1[g,t]<= pmax[g]*zg[g,t]
+        )
+
+        m.ext[:constraints][:min_gen_power_rg_reserve_1] = @constraint(m, [g=G1,t=T],
+         pg[g,t]+ rg_l_reserve_1[g,t]>= pmin[g]*zg[g,t]
+        )
+
+        m.ext[:constraints][:max_gen_power_rg_g_2] = @constraint(m, [g=G2,t=T],
+        pg[g,t]+ rg_lg2[g,t]<= pmax[g]*zg[g,t]
+        )
+
+        m.ext[:constraints][:min_gen_power_rg_g_2] = @constraint(m, [g=G2,t=T],
+         pg[g,t]+ rg_lg2[g,t]>= pmin[g]*zg[g,t]
+        )
+
+        m.ext[:constraints][:max_gen_power_rg_c_2] = @constraint(m, [g=G2,t=T],
+        pg[g,t]+ rg_lc2[g,t]<= pmax[g]*zg[g,t]
+        )
+
+        m.ext[:constraints][:min_gen_power_rg_c_2] = @constraint(m, [g=G2,t=T],
+         pg[g,t]+ rg_lc2[g,t]>= pmin[g]*zg[g,t]
+        )
+
+         m.ext[:constraints][:max_gen_power_rg_reserve_2] = @constraint(m, [g=G2,t=T],
+        pg[g,t]+ rg_l_reserve_2[g,t]<= pmax[g]*zg[g,t]
+        )
+
+        m.ext[:constraints][:min_gen_power_rg_reserve_2] = @constraint(m, [g=G2,t=T],
+         pg[g,t]+ rg_l_reserve_2[g,t]>= pmin[g]*zg[g,t]
+        )
 
     #Unit commitment constraints
 
     Tlabels = collect(T)         # ensure indexable by position
     NT = length(Tlabels)
+
+    #Ramp-down limit for generators
+          m.ext[:constraints][:up_and_down_2_b] = @constraint(m, [g in G, k in 2:NT],
+        pg[g, Tlabels[k-1]] - pg[g, Tlabels[k]] <= downramp[g]+pmin[g]*gammag[g, Tlabels[k]]
+    )#3.20
+
+
     #Ramp-up limit for generators
         m.ext[:constraints][:up_and_down_2_a] = @constraint(m, [g in G, k in 2:NT],
         pg[g, Tlabels[k]] - pg[g, Tlabels[k-1]] <= upramp[g]+(pmin[g]- upramp[g])*betag[g, Tlabels[k]]
     )#3.19
 
  
-    #Ramp-down limit for generators
-          m.ext[:constraints][:up_and_down_2_b] = @constraint(m, [g in G, k in 2:NT],
-        pg[g, Tlabels[k-1]] - pg[g, Tlabels[k]] <= downramp[g]+pmin[g]*gammag[g, Tlabels[k]]
-    )#3.20
 
  
   #Initial status generators (unit commitment)
@@ -706,6 +752,10 @@ conv_p_ac_max
 
 
     #Events constraints (loss of generators)
+
+    # m.ext[:constraints][:event_binary_constraint]= @constraint(m, [g=G,t=T],
+    # zg[g,t]>=δg[g,t])
+
     m.ext[:constraints][:gen_constraint_1]= @constraint(m, [g=G1,t=T],
     pg[g,t]<=plg1[t]
     )
@@ -720,6 +770,9 @@ conv_p_ac_max
     m.ext[:constraints][:conv_constraint_2]= @constraint(m, [cv=CV2,t=T],
     conv_p_ac_inj[cv,t]<=plc2[t]
     )
+
+    #  m.ext[:constraints][:event_binary_constraint_c]= @constraint(m, [cv=CV,t=T],
+    # u_conv_p_ac[cv,t]>=δhvdc[cv,t])
 
     #event constraint (frequency reserve provision)
     m.ext[:constraints][:loss_of_power_frequency_reserve_G_A_1]= @constraint(m, [t=T],
@@ -817,25 +870,25 @@ conv_p_ac_max
 
   #bounding the FFR and FCR contributions of all generator andconverter assets
   m.ext[:constraints][:fcr_bound_gen_lg1]= @constraint(m, [g in G1, t in T],
-     rg_lg1[g,t]<=(1-δg[g,t])*pmax[g]
+     rg_lg1[g,t]<=(1-δg[g,t])*upramp[g]*G_dt[g]/3600
     )
     m.ext[:constraints][:fcr_bound_gen_lc1]= @constraint(m, [g in G1, t in T],
-     rg_lc1[g,t]<=pmax[g]
+     rg_lc1[g,t]<=upramp[g]*G_dt[g]/3600
     )
 
     m.ext[:constraints][:fcr_bound_gen_lreserve_1]= @constraint(m, [g in G1, t in T],
-     rg_l_reserve_1[g,t]<=pmax[g]
+     rg_l_reserve_1[g,t]<=upramp[g]*G_dt[g]/3600
     )
     
     m.ext[:constraints][:fcr_bound_gen_lg2]= @constraint(m, [g in G2, t in T],
-     rg_lg2[g,t]<=(1-δg[g,t])*pmax[g]
+     rg_lg2[g,t]<=(1-δg[g,t])*upramp[g]*G_dt[g]/3600
     )
 
     m.ext[:constraints][:fcr_bound_gen_lc2]= @constraint(m, [g in G2, t in T],
-     rg_lc2[g,t]<=pmax[g]
+     rg_lc2[g,t]<=upramp[g]*G_dt[g]/3600
     )
     m.ext[:constraints][:fcr_bound_gen_lreserve_2]= @constraint(m, [g in G2, t in T],
-     rg_l_reserve_2[g,t]<=pmax[g]
+     rg_l_reserve_2[g,t]<=upramp[g]*G_dt[g]/3600
     )
 
 

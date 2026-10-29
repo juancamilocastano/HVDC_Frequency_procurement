@@ -37,6 +37,7 @@ conv_p_ac=JuMP.value.(m.ext[:variables][:conv_p_ac])*baseMVA
 zgvec=JuMP.value.(m.ext[:variables][:zg])
 δgvec=JuMP.value.(m.ext[:variables][:δg])
 δhvdc=JuMP.value.(m.ext[:variables][:δhvdc])
+u_conv_p_ac=JuMP.value.(m.ext[:variables][:u_conv_p_ac])
 
 
 

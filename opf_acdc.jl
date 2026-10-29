@@ -7,7 +7,7 @@ using Pkg
 # Pkg.add("PowerModels")
 # Pkg.add("PowerModelsACDC")
 # Pkg.add("JuMP")
-using PowerModels, PowerModelsACDC, Gurobi, JuMP, CSV, DataFrames, CairoMakie
+using PowerModels,  Gurobi, JuMP, CSV, DataFrames, CairoMakie
 # Pkg.add("Plots") # if Plots package not added yet, for plotting results
 
 
@@ -72,7 +72,7 @@ build_ac_opf_acdc_frequency_sev_var_res_provi!(m)
 
 # set_optimizer_attribute(m, "DualReductions", 0)
 # set_optimizer_attribute(m, "InfUnbdInfo", 1)
-set_optimizer_attribute(m, "MIPGap", 0.002) 
+set_optimizer_attribute(m, "MIPGap", 0.0002) 
 optimize!(m)
 # @show termination_status(m)
 
@@ -102,4 +102,5 @@ end
 
 solution_summary(m)
 #println(objective_value(m)) # Print the objective value of the model
+
 
